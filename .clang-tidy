@@ -1,0 +1,5 @@
+Checks: 'bugprone-*,clang-diagnostic-*,clang-analyzer-*,cppcoreguidelines-*,modernize-*,-modernize-use-trailing-return-type'
+WarningsAsErrors: true
+HeaderFilterRegex: '.*'
+AnalyzeTemporaryDtors: false
+FormatStyle: llvm
