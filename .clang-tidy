@@ -1,4 +1,4 @@
-Checks: 'bugprone-*,clang-diagnostic-*,clang-analyzer-*,cppcoreguidelines-*,modernize-*,-modernize-use-trailing-return-type'
+Checks: "bugprone-*,clang-diagnostic-*,clang-analyzer-*,cppcoreguidelines-*,modernize-*,-modernize-use-trailing-return-type"
 WarningsAsErrors: true
-HeaderFilterRegex: '.*'
+HeaderFilterRegex: ".*"
 FormatStyle: llvm
