@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15...3.30)
 
 project(cfdp
-        VERSION 1.0
+        VERSION 0.0.1
         DESCRIPTION "CCSDS 727.0-B-5 File Delivery Protocol (CFDP)"
         LANGUAGES CXX)
 
