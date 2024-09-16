@@ -6,7 +6,7 @@
 
 template <class EnumType>
     requires std::is_enum_v<EnumType>
-constexpr auto toUnderlying(EnumType e)
+inline constexpr auto toUnderlying(EnumType e)
 {
     return static_cast<std::underlying_type_t<EnumType>>(e);
 }
