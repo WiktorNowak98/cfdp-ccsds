@@ -56,7 +56,7 @@ enum class SegmentMetadataFlag : uint8_t
 
     sizeBits = 3 + 1 + 1 + 1 + 1 + 1 + 16 + 1 + 3 + 1 + 3 = 32
 */
-constexpr size_t CONST_HEADER_SIZE_BYTES = 32 / 8;
+constexpr uint16_t CONST_HEADER_SIZE_BYTES = 32 / 8;
 
 template <class EntityIDType, class SequenceNumberType>
     requires std::unsigned_integral<EntityIDType> || std::unsigned_integral<SequenceNumberType>
@@ -78,7 +78,7 @@ class PduHeader : PduInterface
           destinationEntityID(destinationEntityID)
     {}
 
-    size_t getRawSize() override;
+    inline uint16_t getRawSize() override;
     std::vector<uint8_t> encodeToBytes() override;
 
   private:
