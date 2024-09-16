@@ -50,16 +50,8 @@ enum class SegmentMetadataFlag : uint8_t
     Present    = 0b1,
 };
 
-/*
-    Without the last 3 fields, the rest of the PDU header has constant
-    size. Calculating all used bits in order:
-
-    sizeBits = 3 + 1 + 1 + 1 + 1 + 1 + 16 + 1 + 3 + 1 + 3 = 32
-*/
-constexpr uint16_t CONST_HEADER_SIZE_BYTES = 32 / 8;
-
 template <class EntityIDType, class SequenceNumberType>
-    requires std::unsigned_integral<EntityIDType> || std::unsigned_integral<SequenceNumberType>
+    requires std::unsigned_integral<EntityIDType> && std::unsigned_integral<SequenceNumberType>
 class PduHeader : PduInterface
 {
   public:
@@ -78,8 +70,8 @@ class PduHeader : PduInterface
           destinationEntityID(destinationEntityID)
     {}
 
-    inline uint16_t getRawSize() override;
-    std::vector<uint8_t> encodeToBytes() override;
+    [[nodiscard]] inline uint16_t getRawSize() const override;
+    [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
 
   private:
     uint8_t version : 3;
