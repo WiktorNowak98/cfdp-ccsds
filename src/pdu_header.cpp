@@ -7,9 +7,7 @@
     size. Calculating all used bits in order:
     sizeBits = 3 + 1 + 1 + 1 + 1 + 1 + 16 + 1 + 3 + 1 + 3 = 32
 */
-inline constexpr uint16_t CONST_HEADER_SIZE_BYTES      = 32 / 8;
-inline constexpr uint8_t VERSION_POSITION              = 5;
-inline constexpr uint8_t SEGMENTATION_CONTROL_POSITION = 7;
+constexpr uint16_t CONST_HEADER_SIZE_BYTES = 32 / 8;
 
 template <class EntityIDType, class SequenceNumberType>
     requires std::unsigned_integral<EntityIDType> && std::unsigned_integral<SequenceNumberType>
@@ -27,8 +25,7 @@ std::vector<uint8_t> cfdp::pdu::PduHeader<EntityIDType, SequenceNumberType>::enc
 
     encodedHeader.reserve(headerSize);
 
-    uint16_t realPduDataFieldLength =
-        crcFlag == CrcFlag::CrcPresent ? pduDataFieldLength + 2 : pduDataFieldLength;
+    uint16_t realPduDataFieldLength = pduDataFieldLength + 2 * (crcFlag == CrcFlag::CrcPresent);
 
     auto pduDataFieldLengthBytes        = utils::intToBytes(realPduDataFieldLength);
     auto sourceEntityIDBytes            = utils::intToBytes(sourceEntityID);
@@ -40,7 +37,7 @@ std::vector<uint8_t> cfdp::pdu::PduHeader<EntityIDType, SequenceNumberType>::enc
     encodedHeader.insert(encodedHeader.end(), pduDataFieldLengthBytes.begin(),
                          pduDataFieldLengthBytes.end());
 
-    encodedHeader.push_back(buildThirdByte());
+    encodedHeader.push_back(buildFourthByte());
 
     encodedHeader.insert(encodedHeader.end(), sourceEntityIDBytes.begin(),
                          sourceEntityIDBytes.end());
@@ -56,16 +53,16 @@ template <class EntityIDType, class SequenceNumberType>
     requires std::unsigned_integral<EntityIDType> && std::unsigned_integral<SequenceNumberType>
 uint8_t cfdp::pdu::PduHeader<EntityIDType, SequenceNumberType>::buildFirstByte() const
 {
-    return (version << VERSION_POSITION) | (utils::toUnderlying(pduType) << 4) |
+    return (version << 5) | (utils::toUnderlying(pduType) << 4) |
            (utils::toUnderlying(direction) << 3) | (utils::toUnderlying(transmissionMode) << 2) |
            (utils::toUnderlying(crcFlag) << 1) | (utils::toUnderlying(largeFileFlag) << 0);
 }
 
 template <class EntityIDType, class SequenceNumberType>
     requires std::unsigned_integral<EntityIDType> && std::unsigned_integral<SequenceNumberType>
-uint8_t cfdp::pdu::PduHeader<EntityIDType, SequenceNumberType>::buildThirdByte() const
+uint8_t cfdp::pdu::PduHeader<EntityIDType, SequenceNumberType>::buildFourthByte() const
 {
-    return (utils::toUnderlying(segmentationControl) << SEGMENTATION_CONTROL_POSITION) |
-           ((lengthOfEntityIDs - 1) << 4) | (utils::toUnderlying(segmentMetadataFlag) << 3) |
+    return (utils::toUnderlying(segmentationControl) << 7) | ((lengthOfEntityIDs - 1) << 4) |
+           (utils::toUnderlying(segmentMetadataFlag) << 3) |
            ((lengthOfTransactionSequenceNumber - 1) << 0);
 }

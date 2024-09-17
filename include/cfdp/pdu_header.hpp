@@ -95,6 +95,6 @@ class PduHeader : PduInterface
     EntityIDType destinationEntityID;
 
     [[nodiscard]] uint8_t buildFirstByte() const;
-    [[nodiscard]] uint8_t buildThirdByte() const;
+    [[nodiscard]] uint8_t buildFourthByte() const;
 };
 } // namespace cfdp::pdu

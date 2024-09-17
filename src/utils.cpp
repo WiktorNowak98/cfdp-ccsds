@@ -1,6 +1,6 @@
 #include "utils.hpp"
 
-inline constexpr uint8_t BITS_IN_BYTE = 8;
+constexpr uint8_t BITS_IN_BYTE = 8;
 
 template <class UnsignedInteger>
     requires std::unsigned_integral<UnsignedInteger>
