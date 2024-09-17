@@ -26,37 +26,46 @@ std::vector<uint8_t> cfdp::pdu::PduHeader<EntityIDType, SequenceNumberType>::enc
     auto encodedHeader = std::vector<uint8_t>{};
 
     encodedHeader.reserve(headerSize);
-    encodedHeader.push_back((version << VERSION_POSITION) | (toUnderlying(pduType) << 4) |
-                            (toUnderlying(direction) << 3) | (toUnderlying(transmissionMode) << 2) |
-                            (toUnderlying(crcFlag) << 1) | (toUnderlying(largeFileFlag) << 0));
 
-    auto realPduDataFieldLength =
+    uint16_t realPduDataFieldLength =
         crcFlag == CrcFlag::CrcPresent ? pduDataFieldLength + 2 : pduDataFieldLength;
 
-    auto pduDataFieldLengthBytes = intToBytes<uint16_t>(realPduDataFieldLength);
+    auto pduDataFieldLengthBytes        = utils::intToBytes(realPduDataFieldLength);
+    auto sourceEntityIDBytes            = utils::intToBytes(sourceEntityID);
+    auto transactionSequenceNumberBytes = utils::intToBytes(transactionSequenceNumber);
+    auto destinationEntityIDBytes       = utils::intToBytes(destinationEntityID);
+
+    encodedHeader.push_back(buildFirstByte());
 
     encodedHeader.insert(encodedHeader.end(), pduDataFieldLengthBytes.begin(),
                          pduDataFieldLengthBytes.end());
-    encodedHeader.push_back((toUnderlying(segmentationControl) << SEGMENTATION_CONTROL_POSITION) |
-                            ((lengthOfEntityIDs - 1) << 4) |
-                            (toUnderlying(segmentMetadataFlag) << 3) |
-                            ((lengthOfTransactionSequenceNumber - 1) << 0));
 
-    auto sourceEntityIDBytes = intToBytes<EntityIDType>(sourceEntityID);
+    encodedHeader.push_back(buildThirdByte());
 
     encodedHeader.insert(encodedHeader.end(), sourceEntityIDBytes.begin(),
                          sourceEntityIDBytes.end());
-
-    auto transactionSequenceNumberBytes =
-        intToBeBytes<SequenceNumberType>(transactionSequenceNumber);
-
     encodedHeader.insert(encodedHeader.end(), transactionSequenceNumberBytes.begin(),
                          transactionSequenceNumberBytes.end());
-
-    auto destinationEntityIDBytes = intToBytes<EntityIDType>(destinationEntityID);
-
     encodedHeader.insert(encodedHeader.end(), destinationEntityIDBytes.begin(),
                          destinationEntityIDBytes.end());
 
     return encodedHeader;
 };
+
+template <class EntityIDType, class SequenceNumberType>
+    requires std::unsigned_integral<EntityIDType> && std::unsigned_integral<SequenceNumberType>
+uint8_t cfdp::pdu::PduHeader<EntityIDType, SequenceNumberType>::buildFirstByte() const
+{
+    return (version << VERSION_POSITION) | (utils::toUnderlying(pduType) << 4) |
+           (utils::toUnderlying(direction) << 3) | (utils::toUnderlying(transmissionMode) << 2) |
+           (utils::toUnderlying(crcFlag) << 1) | (utils::toUnderlying(largeFileFlag) << 0);
+}
+
+template <class EntityIDType, class SequenceNumberType>
+    requires std::unsigned_integral<EntityIDType> && std::unsigned_integral<SequenceNumberType>
+uint8_t cfdp::pdu::PduHeader<EntityIDType, SequenceNumberType>::buildThirdByte() const
+{
+    return (utils::toUnderlying(segmentationControl) << SEGMENTATION_CONTROL_POSITION) |
+           ((lengthOfEntityIDs - 1) << 4) | (utils::toUnderlying(segmentMetadataFlag) << 3) |
+           ((lengthOfTransactionSequenceNumber - 1) << 0);
+}

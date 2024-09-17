@@ -93,5 +93,8 @@ class PduHeader : PduInterface
     SequenceNumberType transactionSequenceNumber;
     // Size defined by `lengthOfEntityIDs`.
     EntityIDType destinationEntityID;
+
+    [[nodiscard]] uint8_t buildFirstByte() const;
+    [[nodiscard]] uint8_t buildThirdByte() const;
 };
 } // namespace cfdp::pdu
