@@ -25,7 +25,7 @@ std::vector<uint8_t> cfdp::pdu::PduHeader<EntityIDType, SequenceNumberType>::enc
 
     encodedHeader.reserve(headerSize);
 
-    uint16_t realPduDataFieldLength = pduDataFieldLength + 2 * (crcFlag == CrcFlag::CrcPresent);
+    uint16_t realPduDataFieldLength = pduDataFieldLength + 4 * (crcFlag == CrcFlag::CrcPresent);
 
     auto pduDataFieldLengthBytes        = utils::intToBytes(realPduDataFieldLength);
     auto sourceEntityIDBytes            = utils::intToBytes(sourceEntityID);
