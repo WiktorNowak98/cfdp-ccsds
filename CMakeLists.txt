@@ -7,6 +7,7 @@ project(
     LANGUAGES CXX
 )
 
+option(COMPILE_TESTS "compile tests")
 set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -20,7 +21,9 @@ set(CLANG_TIDY_COMMAND
     "-config-file=${cfdp_SOURCE_DIR}/.clang-tidy"
 )
 
-enable_testing()
-
 add_subdirectory(src)
-add_subdirectory(tests)
+
+if(${COMPILE_TESTS})
+    enable_testing()
+    add_subdirectory(tests)
+endif()

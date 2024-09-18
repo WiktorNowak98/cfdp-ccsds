@@ -6,6 +6,7 @@ build_dir="${repo_root}/build"
 
 clean_run="0"
 configure_cmake="0"
+compile_tests=false
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -25,6 +26,11 @@ while [[ $# -gt 0 ]]; do
 		configure_cmake="1"
 		shift
 		;;
+	--compile-tests)
+		compile_tests=true
+		shift
+		;;
+
 	*)
 		echo "Unknown option $1"
 		exit 1
@@ -36,12 +42,13 @@ echo "Build configuration:"
 echo "root          = ${repo_root}"
 echo "build dir     = ${build_dir}"
 echo "C++ compiler  = ${cxx_compiler}"
+echo "Compile Tests = ${compile_tests}"
 
 if [ "${configure_cmake}" -eq "1" ]; then
 	echo -e "\nRunning fresh cmake configuration...\n"
-	(cd "${repo_root}" && rm -rf build) || true
+	(cd "${repo_root}" && rm -rf build)
 
-	cmake -G Ninja -D CMAKE_CXX_COMPILER="${cxx_compiler}" -S "${repo_root}" -B build
+	cmake -G Ninja -D CMAKE_CXX_COMPILER="${cxx_compiler}" -D COMPILE_TESTS="${compile_tests}" -S "${repo_root}" -B build
 fi
 
 if [ ! -f "${build_dir}/CMakeCache.txt" ]; then
