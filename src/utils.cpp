@@ -1,20 +1,15 @@
 #include "utils.hpp"
 
-constexpr uint8_t BITS_IN_BYTE = 8;
+#include <span>
 
-template <class UnsignedInteger>
-    requires std::unsigned_integral<UnsignedInteger>
-std::vector<uint8_t> utils::intToBytes(UnsignedInteger value)
+std::vector<uint8_t> utils::intToBigEndianBytes(uint64_t value, uint8_t size)
 {
-    // This cast is safe, the biggest we can get is 8.
-    auto amountOfBytes = static_cast<uint8_t>(sizeof(UnsignedInteger));
+    std::span<uint8_t> view{std::bit_cast<uint8_t*>(&value), size};
 
-    auto bytes = std::vector<uint8_t>{};
-    bytes.reserve(amountOfBytes);
-
-    for (uint8_t byteNum = 0; byteNum < amountOfBytes; byteNum++)
-    {
-        bytes[byteNum] = (value >> (byteNum * BITS_IN_BYTE));
-    }
+#if defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
+    std::vector<uint8_t> bytes{view.rbegin(), view.rend()};
+#else
+#error Big Endian systems are currently not supported.
+#endif
     return bytes;
 };
