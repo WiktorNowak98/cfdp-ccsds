@@ -6,13 +6,11 @@ build_dir="${repo_root}/build"
 
 clean_run=false
 compile_tests=false
+shared_lib_option="OFF"
+cxx_compiler="g++"
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
-	--gcc)
-		cxx_compiler="g++"
-		shift
-		;;
 	--clang)
 		cxx_compiler="clang++"
 		shift
@@ -25,6 +23,10 @@ while [[ $# -gt 0 ]]; do
 		compile_tests=true
 		shift
 		;;
+	--shared-lib)
+		shared_lib_option="ON"
+		shift
+		;;
 	*)
 		echo "Unknown option $1"
 		exit 1
@@ -34,14 +36,15 @@ done
 
 echo
 echo "Build configuration:"
-echo "Root          = ${repo_root}"
-echo "Build dir     = ${build_dir}"
-echo "C++ compiler  = ${cxx_compiler}"
-echo "Clean Run     = ${clean_run}"
-echo "Compile Tests = ${compile_tests}"
+echo "Repository Root     = ${repo_root}"
+echo "Build Dir           = ${build_dir}"
+echo "C++ Compiler        = ${cxx_compiler}"
+echo "Clean Run           = ${clean_run}"
+echo "Compile Tests       = ${compile_tests}"
+echo "Compile Shared Lib  = ${shared_lib_option}"
 echo
 
-cmake -G Ninja -D CMAKE_CXX_COMPILER="${cxx_compiler}" -D COMPILE_TESTS="${compile_tests}" -S "${repo_root}" -B build
+cmake -G Ninja -D CMAKE_CXX_COMPILER="${cxx_compiler}" -D BUILD_SHARED_LIBS="${shared_lib_option}" -D COMPILE_TESTS="${compile_tests}" -S "${repo_root}" -B build
 
 if [ ! -f "${build_dir}/CMakeCache.txt" ]; then
 	echo -e "\nBuild directory or CMakeCache.txt does not exist."

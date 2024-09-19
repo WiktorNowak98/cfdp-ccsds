@@ -7,19 +7,17 @@ project(
     LANGUAGES CXX
 )
 
-option(COMPILE_TESTS "compile tests")
+option(COMPILE_TESTS "should the test be compileds")
+
 set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 # Due to https://github.com/llvm/llvm-project/issues/108455 we cannot support this feature yet.
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
-set(CLANG_TIDY_COMMAND
-    "${CLANG_TIDY_EXE}"
-    "-config-file=${cfdp_SOURCE_DIR}/.clang-tidy"
-)
+set(CLANG_TIDY_COMMAND "${CLANG_TIDY_EXE}" "-config-file=${cfdp_SOURCE_DIR}/.clang-tidy")
 
 add_subdirectory(src)
 
