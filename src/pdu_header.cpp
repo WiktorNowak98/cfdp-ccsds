@@ -5,7 +5,9 @@
 std::vector<uint8_t> cfdp::pdu::header::PduHeader::encodeToBytes() const
 {
     auto headerSize    = getRawSize();
-    auto encodedHeader = std::vector<uint8_t>(headerSize);
+    auto encodedHeader = std::vector<uint8_t>{};
+
+    encodedHeader.reserve(headerSize);
 
     uint16_t realPduDataFieldLength = pduDataFieldLength + 4 * (crcFlag == CrcFlag::CrcPresent);
 
@@ -16,10 +18,10 @@ std::vector<uint8_t> cfdp::pdu::header::PduHeader::encodeToBytes() const
 
     encodedHeader.push_back(firstByte);
 
-    auto pduDataFieldLengthBytes = utils::intToBytes(realPduDataFieldLength, sizeof(uint16_t));
+    auto pduDataFieldLengthBytes =
+        utils::intToBigEndianBytes(realPduDataFieldLength, sizeof(uint16_t));
 
-    encodedHeader.insert(encodedHeader.end(), pduDataFieldLengthBytes.begin(),
-                         pduDataFieldLengthBytes.end());
+    utils::concatenateVectorsInplace(pduDataFieldLengthBytes, encodedHeader);
 
     uint8_t fourthByte =
         (utils::toUnderlying(segmentationControl) << 7) | ((lengthOfEntityIDs - 1) << 4) |
@@ -27,17 +29,19 @@ std::vector<uint8_t> cfdp::pdu::header::PduHeader::encodeToBytes() const
 
     encodedHeader.push_back(fourthByte);
 
-    auto sourceEntityIDBytes = utils::intToBytes(sourceEntityID, lengthOfEntityIDs);
-    auto transactionSequenceNumberBytes =
-        utils::intToBytes(transactionSequenceNumber, lengthOfTransaction);
-    auto destinationEntityIDBytes = utils::intToBytes(destinationEntityID, lengthOfEntityIDs);
+    auto sourceEntityBytes = utils::intToBigEndianBytes(sourceEntityID, lengthOfEntityIDs);
 
-    encodedHeader.insert(encodedHeader.end(), sourceEntityIDBytes.begin(),
-                         sourceEntityIDBytes.end());
-    encodedHeader.insert(encodedHeader.end(), transactionSequenceNumberBytes.begin(),
-                         transactionSequenceNumberBytes.end());
-    encodedHeader.insert(encodedHeader.end(), destinationEntityIDBytes.begin(),
-                         destinationEntityIDBytes.end());
+    utils::concatenateVectorsInplace(sourceEntityBytes, encodedHeader);
+
+    auto transactionBytes =
+        utils::intToBigEndianBytes(transactionSequenceNumber, lengthOfTransaction);
+
+    utils::concatenateVectorsInplace(transactionBytes, encodedHeader);
+
+    auto destinationEntityBytes =
+        utils::intToBigEndianBytes(destinationEntityID, lengthOfEntityIDs);
+
+    utils::concatenateVectorsInplace(destinationEntityBytes, encodedHeader);
 
     return encodedHeader;
 };

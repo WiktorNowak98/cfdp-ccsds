@@ -11,6 +11,6 @@ TEST(PduHeader, Basic)
                   SegmentationControl::BoundariesNotPreserved, 1, SegmentMetadataFlag::NotPresent,
                   1, 1, 1, 2);
 
-    std::cout << header.getRawSize() << std::endl;
+    auto encoded = header.encodeToBytes();
 }
 } // namespace cfdp::pdu::header
