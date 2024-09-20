@@ -8,12 +8,8 @@
 
 namespace cfdp::pdu::header
 {
-/*
-    Without the last 3 fields, the rest of the PDU header has constant
-    size. Calculating all used bits in order:
-    sizeBits = 3 + 1 + 1 + 1 + 1 + 1 + 16 + 1 + 3 + 1 + 3 = 32
-*/
-constexpr uint16_t CONST_HEADER_SIZE_BYTES = 32 / 8;
+// Without last three fields, PDU header has constant size of 32 bits.
+constexpr uint16_t CONST_HEADER_SIZE_BYTES = sizeof(uint32_t);
 
 class PduHeader : PduInterface
 {
@@ -37,7 +33,8 @@ class PduHeader : PduInterface
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
 
   private:
-    uint8_t version : 3;
+    // Used version of the CFDP protocol. Between 0 and 7.
+    uint8_t version;
     PduType pduType;
     Direction direction;
     TransmissionMode transmissionMode;
@@ -45,11 +42,11 @@ class PduHeader : PduInterface
     LargeFileFlag largeFileFlag;
     uint16_t pduDataFieldLength;
     SegmentationControl segmentationControl;
-    // Number of bytes in `EntityIDType`. Between one and eight.
-    uint8_t lengthOfEntityIDs : 3;
+    // Number of bytes in `entityID`. Between 1 and 8.
+    uint8_t lengthOfEntityIDs;
     SegmentMetadataFlag segmentMetadataFlag;
-    // Number of bytes in `SequenceNumberType`. Between one and eight.
-    uint8_t lengthOfTransaction : 3;
+    // Number of bytes in `transactionNumber`. Between 1 and 8.
+    uint8_t lengthOfTransaction;
     uint64_t sourceEntityID;
     uint64_t transactionSequenceNumber;
     uint64_t destinationEntityID;

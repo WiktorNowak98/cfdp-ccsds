@@ -18,6 +18,8 @@ AlignConsecutiveBitFields:
   AcrossEmptyLines: true
   AcrossComments: false
 
+AlwaysBreakTemplateDeclarations: true
+
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterClass: true
