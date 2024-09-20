@@ -1,8 +1,5 @@
 #include "utils.hpp"
 
-#include <exception>
-#include <span>
-
 std::vector<uint8_t> utils::intToBigEndianBytes(uint64_t value, uint8_t size)
 {
     if (size > sizeof(uint64_t))
