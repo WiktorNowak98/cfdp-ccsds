@@ -42,7 +42,7 @@ T utils::bigEndianBytesToInt(const std::span<uint8_t> memoryView)
 }
 
 template <class T>
-void utils::concatenateVectorsInplace(std::vector<T>& src, std::vector<T>& dst)
+inline void utils::concatenateVectorsInplace(std::vector<T>& src, std::vector<T>& dst)
 {
     dst.insert(dst.end(), std::make_move_iterator(src.begin()), std::make_move_iterator(src.end()));
 }
