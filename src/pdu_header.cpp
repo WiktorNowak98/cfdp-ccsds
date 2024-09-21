@@ -24,7 +24,7 @@ constexpr uint8_t MAX_THREE_BIT_NUM     = 0b111;
 constexpr uint8_t MIN_HEADER_SIZE_BYTES = CONST_HEADER_SIZE_BYTES + 3;
 } // namespace cfdp::pdu::header
 
-cfdp::pdu::header::PduHeader::PduHeader(const std::span<uint8_t>& memoryView)
+cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memoryView)
 {
     // This is the minumum amount of bytes, the header has to contain.
     if (memoryView.size_bytes() < MIN_HEADER_SIZE_BYTES)

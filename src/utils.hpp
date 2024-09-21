@@ -1,6 +1,5 @@
 #pragma once
 
-#include <concepts>
 #include <cstdint>
 #include <iterator>
 #include <span>
@@ -15,12 +14,11 @@ std::vector<uint8_t> intToBigEndianBytes(uint64_t value, uint8_t size);
 
 template <class T>
     requires std::unsigned_integral<T>
-T bigEndianBytesToInt(const std::span<uint8_t>& memoryView);
+T bigEndianBytesToInt(std::span<uint8_t const> memoryView);
 
 template <class T>
     requires std::unsigned_integral<T>
-T bigEndianBytesToIntValidated(const std::span<uint8_t>& memoryView, uint32_t offset,
-                               uint32_t size);
+T bigEndianBytesToIntValidated(std::span<uint8_t const> memoryView, uint32_t offset, uint32_t size);
 
 template <class T>
 inline void concatenateVectorsInplace(std::vector<T>& src, std::vector<T>& dst);
@@ -32,7 +30,7 @@ inline decltype(auto) toUnderlying(T e) noexcept;
 
 template <class T>
     requires std::unsigned_integral<T>
-T utils::bigEndianBytesToInt(const std::span<uint8_t>& memoryView)
+T utils::bigEndianBytesToInt(std::span<uint8_t const> memoryView)
 {
     if (memoryView.size() > sizeof(T))
     {
@@ -51,7 +49,7 @@ T utils::bigEndianBytesToInt(const std::span<uint8_t>& memoryView)
 
 template <class T>
     requires std::unsigned_integral<T>
-T utils::bigEndianBytesToIntValidated(const std::span<uint8_t>& memoryView, uint32_t offset,
+T utils::bigEndianBytesToIntValidated(std::span<uint8_t const> memoryView, uint32_t offset,
                                       uint32_t size)
 {
     // NOTE: 21.09.2024 <@uncommon-nickname>

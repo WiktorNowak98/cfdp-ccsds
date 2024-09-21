@@ -29,7 +29,7 @@ class PduHeader : PduInterface
           transactionSequenceNumber(transactionSequenceNumber),
           destinationEntityID(destinationEntityID)
     {}
-    PduHeader(const std::span<uint8_t>& memoryView);
+    PduHeader(std::span<uint8_t const> memoryView);
 
     [[nodiscard]] inline uint16_t getRawSize() const override;
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
