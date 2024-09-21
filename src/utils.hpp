@@ -40,14 +40,15 @@ T utils::bytesToInt(std::span<uint8_t const> memory, uint32_t offset, uint32_t s
     // undefined behaviour!
     if (memory.size() < offset + size)
     {
-        throw cfdp::exception::BytesDecodeException{"Passed memory does not contain enough bytes"};
+        throw cfdp::exception::DecodeFromBytesException{
+            "Passed memory does not contain enough bytes"};
     }
 
     auto subspan = memory.subspan(offset, size);
 
     if (subspan.size() > sizeof(T))
     {
-        throw cfdp::exception::BytesDecodeException{"Memory chunk will not fit in size T"};
+        throw cfdp::exception::DecodeFromBytesException{"Memory chunk will not fit in size T"};
     }
 
     T result{};

@@ -20,15 +20,15 @@ class CfdpException : public std::exception
     std::string message;
 };
 
-class BytesEncodeException : public CfdpException
+class EncodeToBytesException : public CfdpException
 {
   public:
-    BytesEncodeException(const char* message) : CfdpException(message) {}
+    EncodeToBytesException(const char* message) : CfdpException(message) {}
 };
 
-class BytesDecodeException : public CfdpException
+class DecodeFromBytesException : public CfdpException
 {
   public:
-    BytesDecodeException(const char* message) : CfdpException(message) {}
+    DecodeFromBytesException(const char* message) : CfdpException(message) {}
 };
 } // namespace cfdp::exception

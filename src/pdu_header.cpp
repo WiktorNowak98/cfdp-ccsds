@@ -27,7 +27,8 @@ cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memory)
 {
     if (memory.size() < MIN_HEADER_SIZE_BYTES)
     {
-        throw cfdp::exception::BytesDecodeException{"Passed memory does not contain enough bytes"};
+        throw cfdp::exception::DecodeFromBytesException{
+            "Passed memory does not contain enough bytes"};
     }
 
     auto firstByte = memory[0];
