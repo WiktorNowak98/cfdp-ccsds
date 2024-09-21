@@ -38,7 +38,7 @@ cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memoryView)
 
     if (version > MAX_THREE_BIT_NUM)
     {
-        throw cfdp::exception::BytesDecodeException{"Passed version is larger than 7."};
+        throw cfdp::exception::BytesDecodeException{"Passed version is larger than 7"};
     }
 
     pduType          = PduType((firstByte & PDU_TYPE_BITMASK) >> 4);
