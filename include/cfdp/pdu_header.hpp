@@ -29,9 +29,13 @@ class PduHeader : PduInterface
           transactionSequenceNumber(transactionSequenceNumber),
           destinationEntityID(destinationEntityID)
     {}
-    PduHeader(std::span<uint8_t const> memoryView);
+    PduHeader(std::span<uint8_t const> memory);
 
-    [[nodiscard]] inline uint16_t getRawSize() const override;
+    [[nodiscard]] inline uint16_t getRawSize() const override
+    {
+        return CONST_HEADER_SIZE_BYTES + (2 * lengthOfEntityIDs) + lengthOfTransaction;
+    };
+
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
 
   private:
@@ -54,8 +58,3 @@ class PduHeader : PduInterface
     uint64_t destinationEntityID;
 };
 } // namespace cfdp::pdu::header
-
-inline uint16_t cfdp::pdu::header::PduHeader::getRawSize() const
-{
-    return CONST_HEADER_SIZE_BYTES + (2 * lengthOfEntityIDs) + lengthOfTransaction;
-};

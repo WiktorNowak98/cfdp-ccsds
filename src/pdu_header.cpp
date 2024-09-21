@@ -23,15 +23,14 @@ constexpr uint8_t TRANSACTION_LENGTH_BITMASK    = 0b00000111;
 constexpr uint8_t MIN_HEADER_SIZE_BYTES = CONST_HEADER_SIZE_BYTES + 3;
 } // namespace cfdp::pdu::header
 
-cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memoryView)
+cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memory)
 {
-    // This is the minumum amount of bytes, the header has to contain.
-    if (memoryView.size() < MIN_HEADER_SIZE_BYTES)
+    if (memory.size() < MIN_HEADER_SIZE_BYTES)
     {
-        throw cfdp::exception::BytesDecodeException{
-            "Passed buffer view is too small to contain a PDU header"};
+        throw cfdp::exception::BytesDecodeException{"Passed memory does not contain enough bytes"};
     }
-    auto firstByte = memoryView[0];
+
+    auto firstByte = memory[0];
 
     version          = (firstByte & VERSION_BITMASK) >> 5;
     pduType          = PduType((firstByte & PDU_TYPE_BITMASK) >> 4);
@@ -40,13 +39,12 @@ cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memoryView)
     crcFlag          = CrcFlag((firstByte & CRC_FLAG_BITMASK) >> 1);
     largeFileFlag    = LargeFileFlag((firstByte & LARGE_FILE_FLAG_BITMASK) >> 0);
 
-    const auto secondAndThirdByte = memoryView.subspan(1, 2);
-    auto rawPduDataFieldLength    = utils::bigEndianBytesToInt<uint16_t>(secondAndThirdByte);
+    auto rawPduDataFieldLength = utils::bytesToInt<uint16_t>(memory, 1, 2);
 
     pduDataFieldLength =
         rawPduDataFieldLength - 4 * (static_cast<uint8_t>(crcFlag == CrcFlag::CrcPresent));
 
-    auto fourthByte = memoryView[3];
+    auto fourthByte = memory[3];
 
     segmentationControl = SegmentationControl((fourthByte & SEGMENTATION_CONTROL_BITMASK) >> 7);
     segmentMetadataFlag = SegmentMetadataFlag((fourthByte & SEGMENT_METADATA_FLAG_BITMASK) >> 3);
@@ -56,12 +54,11 @@ cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memoryView)
     lengthOfEntityIDs   = ((fourthByte & ENTITY_ID_LENGTH_BITMASK) >> 4) + 1;
     lengthOfTransaction = ((fourthByte & TRANSACTION_LENGTH_BITMASK) >> 0) + 1;
 
-    sourceEntityID =
-        utils::bigEndianBytesToIntValidated<uint64_t>(memoryView, 4, lengthOfEntityIDs);
-    transactionSequenceNumber = utils::bigEndianBytesToIntValidated<uint64_t>(
-        memoryView, 4 + lengthOfEntityIDs, lengthOfTransaction);
-    destinationEntityID = utils::bigEndianBytesToIntValidated<uint64_t>(
-        memoryView, 4 + lengthOfEntityIDs + lengthOfTransaction, lengthOfEntityIDs);
+    sourceEntityID = utils::bytesToInt<uint64_t>(memory, 4, lengthOfEntityIDs);
+    transactionSequenceNumber =
+        utils::bytesToInt<uint64_t>(memory, 4 + lengthOfEntityIDs, lengthOfTransaction);
+    destinationEntityID = utils::bytesToInt<uint64_t>(
+        memory, 4 + lengthOfEntityIDs + lengthOfTransaction, lengthOfEntityIDs);
 };
 
 std::vector<uint8_t> cfdp::pdu::header::PduHeader::encodeToBytes() const
@@ -81,9 +78,7 @@ std::vector<uint8_t> cfdp::pdu::header::PduHeader::encodeToBytes() const
 
     encodedHeader.push_back(firstByte);
 
-    auto pduDataFieldLengthBytes =
-        utils::intToBigEndianBytes(realPduDataFieldLength, sizeof(uint16_t));
-
+    auto pduDataFieldLengthBytes = utils::intToBytes(realPduDataFieldLength, sizeof(uint16_t));
     utils::concatenateVectorsInplace(pduDataFieldLengthBytes, encodedHeader);
 
     // To fit in 3 bits, CFDP standard specifies that the size is
@@ -94,18 +89,13 @@ std::vector<uint8_t> cfdp::pdu::header::PduHeader::encodeToBytes() const
 
     encodedHeader.push_back(fourthByte);
 
-    auto sourceEntityBytes = utils::intToBigEndianBytes(sourceEntityID, lengthOfEntityIDs);
-
+    auto sourceEntityBytes = utils::intToBytes(sourceEntityID, lengthOfEntityIDs);
     utils::concatenateVectorsInplace(sourceEntityBytes, encodedHeader);
 
-    auto transactionBytes =
-        utils::intToBigEndianBytes(transactionSequenceNumber, lengthOfTransaction);
-
+    auto transactionBytes = utils::intToBytes(transactionSequenceNumber, lengthOfTransaction);
     utils::concatenateVectorsInplace(transactionBytes, encodedHeader);
 
-    auto destinationEntityBytes =
-        utils::intToBigEndianBytes(destinationEntityID, lengthOfEntityIDs);
-
+    auto destinationEntityBytes = utils::intToBytes(destinationEntityID, lengthOfEntityIDs);
     utils::concatenateVectorsInplace(destinationEntityBytes, encodedHeader);
 
     return encodedHeader;
