@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
 #include <vector>
 
 #include "pdu_enums.hpp"
@@ -28,6 +29,7 @@ class PduHeader : PduInterface
           transactionSequenceNumber(transactionSequenceNumber),
           destinationEntityID(destinationEntityID)
     {}
+    PduHeader(const std::span<uint8_t>& memoryView);
 
     [[nodiscard]] inline uint16_t getRawSize() const override;
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
