@@ -20,27 +20,20 @@ constexpr uint8_t ENTITY_ID_LENGTH_BITMASK      = 0b01110000;
 constexpr uint8_t SEGMENT_METADATA_FLAG_BITMASK = 0b00001000;
 constexpr uint8_t TRANSACTION_LENGTH_BITMASK    = 0b00000111;
 
-constexpr uint8_t MAX_THREE_BIT_NUM     = 0b111;
 constexpr uint8_t MIN_HEADER_SIZE_BYTES = CONST_HEADER_SIZE_BYTES + 3;
 } // namespace cfdp::pdu::header
 
 cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memoryView)
 {
     // This is the minumum amount of bytes, the header has to contain.
-    if (memoryView.size_bytes() < MIN_HEADER_SIZE_BYTES)
+    if (memoryView.size() < MIN_HEADER_SIZE_BYTES)
     {
         throw cfdp::exception::BytesDecodeException{
             "Passed buffer view is too small to contain a PDU header"};
     }
     auto firstByte = memoryView[0];
 
-    version = (firstByte & VERSION_BITMASK) >> 5;
-
-    if (version > MAX_THREE_BIT_NUM)
-    {
-        throw cfdp::exception::BytesDecodeException{"Passed version is larger than 7"};
-    }
-
+    version          = (firstByte & VERSION_BITMASK) >> 5;
     pduType          = PduType((firstByte & PDU_TYPE_BITMASK) >> 4);
     direction        = Direction((firstByte & DIRECTION_BITMASK) >> 3);
     transmissionMode = TransmissionMode((firstByte & TRANSMISSION_MODE_BITMASK) >> 2);
