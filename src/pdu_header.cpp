@@ -31,7 +31,7 @@ cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memory)
             "Passed memory does not contain enough bytes"};
     }
 
-    auto firstByte = memory[0];
+    const auto firstByte = memory[0];
 
     version          = (firstByte & VERSION_BITMASK) >> 5;
     pduType          = PduType((firstByte & PDU_TYPE_BITMASK) >> 4);
@@ -45,7 +45,7 @@ cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memory)
     pduDataFieldLength =
         rawPduDataFieldLength - 4 * (static_cast<uint8_t>(crcFlag == CrcFlag::CrcPresent));
 
-    auto fourthByte = memory[3];
+    const auto fourthByte = memory[3];
 
     segmentationControl = SegmentationControl((fourthByte & SEGMENTATION_CONTROL_BITMASK) >> 7);
     segmentMetadataFlag = SegmentMetadataFlag((fourthByte & SEGMENT_METADATA_FLAG_BITMASK) >> 3);
@@ -64,15 +64,15 @@ cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memory)
 
 std::vector<uint8_t> cfdp::pdu::header::PduHeader::encodeToBytes() const
 {
-    auto headerSize    = getRawSize();
-    auto encodedHeader = std::vector<uint8_t>{};
+    const auto headerSize = getRawSize();
+    auto encodedHeader    = std::vector<uint8_t>{};
 
     encodedHeader.reserve(headerSize);
 
-    uint16_t realPduDataFieldLength =
+    const uint16_t realPduDataFieldLength =
         pduDataFieldLength + 4 * (static_cast<uint8_t>(crcFlag == CrcFlag::CrcPresent));
 
-    uint8_t firstByte =
+    const uint8_t firstByte =
         (version << 5) | (utils::toUnderlying(pduType) << 4) |
         (utils::toUnderlying(direction) << 3) | (utils::toUnderlying(transmissionMode) << 2) |
         (utils::toUnderlying(crcFlag) << 1) | (utils::toUnderlying(largeFileFlag) << 0);
@@ -84,7 +84,7 @@ std::vector<uint8_t> cfdp::pdu::header::PduHeader::encodeToBytes() const
 
     // To fit in 3 bits, CFDP standard specifies that the size is
     // encoded as a size - 1.
-    uint8_t fourthByte =
+    const uint8_t fourthByte =
         (utils::toUnderlying(segmentationControl) << 7) | ((lengthOfEntityIDs - 1) << 4) |
         (utils::toUnderlying(segmentMetadataFlag) << 3) | ((lengthOfTransaction - 1) << 0);
 
