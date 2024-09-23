@@ -4,43 +4,41 @@
 #include "internal_exceptions.hpp"
 #include "utils.hpp"
 
-namespace cfdp::pdu::header
+namespace
 {
 // First header byte related bitmasks.
-constexpr uint8_t VERSION_BITMASK           = 0b11100000;
-constexpr uint8_t PDU_TYPE_BITMASK          = 0b00010000;
-constexpr uint8_t DIRECTION_BITMASK         = 0b00001000;
-constexpr uint8_t TRANSMISSION_MODE_BITMASK = 0b00000100;
-constexpr uint8_t CRC_FLAG_BITMASK          = 0b00000010;
-constexpr uint8_t LARGE_FILE_FLAG_BITMASK   = 0b00000001;
+constexpr uint8_t version_bitmask           = 0b1110'0000;
+constexpr uint8_t pdu_type_bitmask          = 0b0001'0000;
+constexpr uint8_t direction_bitmask         = 0b0000'1000;
+constexpr uint8_t transmission_mode_bitmask = 0b0000'0100;
+constexpr uint8_t crc_flag_bitmask          = 0b0000'0010;
+constexpr uint8_t large_file_flag_bitmask   = 0b0000'0001;
 
 // Fourth header byte related bitmasks.
-constexpr uint8_t SEGMENTATION_CONTROL_BITMASK  = 0b10000000;
-constexpr uint8_t ENTITY_ID_LENGTH_BITMASK      = 0b01110000;
-constexpr uint8_t SEGMENT_METADATA_FLAG_BITMASK = 0b00001000;
-constexpr uint8_t TRANSACTION_LENGTH_BITMASK    = 0b00000111;
-
-constexpr uint8_t MIN_HEADER_SIZE_BYTES = CONST_HEADER_SIZE_BYTES + 3;
-} // namespace cfdp::pdu::header
+constexpr uint8_t segmentation_control_bitmask  = 0b1000'0000;
+constexpr uint8_t entity_id_length_bitmask      = 0b0111'0000;
+constexpr uint8_t segment_metadata_flag_bitmask = 0b0000'1000;
+constexpr uint8_t transaction_length_bitmask    = 0b0000'0111;
+} // namespace
 
 namespace utils     = ::cfdp::internal::utils;
 namespace exception = ::cfdp::internal::exception;
 
 cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memory)
 {
-    if (memory.size() < MIN_HEADER_SIZE_BYTES)
+    if (memory.size() < min_header_size_bytes)
     {
         throw exception::DecodeFromBytesException{"Passed memory does not contain enough bytes"};
     }
 
     const auto firstByte = memory[0];
 
-    version          = (firstByte & VERSION_BITMASK) >> 5;
-    pduType          = PduType((firstByte & PDU_TYPE_BITMASK) >> 4);
-    direction        = Direction((firstByte & DIRECTION_BITMASK) >> 3);
-    transmissionMode = TransmissionMode((firstByte & TRANSMISSION_MODE_BITMASK) >> 2);
-    crcFlag          = CrcFlag((firstByte & CRC_FLAG_BITMASK) >> 1);
-    largeFileFlag    = LargeFileFlag((firstByte & LARGE_FILE_FLAG_BITMASK) >> 0);
+    version          = (firstByte & version_bitmask) >> 5;
+    pduType          = PduType((firstByte & pdu_type_bitmask) >> 4);
+    direction        = Direction((firstByte & direction_bitmask) >> 3);
+    transmissionMode = TransmissionMode((firstByte & transmission_mode_bitmask) >> 2);
+    crcFlag          = CrcFlag((firstByte & crc_flag_bitmask) >> 1);
+    largeFileFlag    = LargeFileFlag((firstByte & large_file_flag_bitmask) >> 0);
 
     auto rawPduDataFieldLength = utils::bytesToInt<uint16_t>(memory, 1, 2);
 
@@ -49,13 +47,13 @@ cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memory)
 
     const auto fourthByte = memory[3];
 
-    segmentationControl = SegmentationControl((fourthByte & SEGMENTATION_CONTROL_BITMASK) >> 7);
-    segmentMetadataFlag = SegmentMetadataFlag((fourthByte & SEGMENT_METADATA_FLAG_BITMASK) >> 3);
+    segmentationControl = SegmentationControl((fourthByte & segmentation_control_bitmask) >> 7);
+    segmentMetadataFlag = SegmentMetadataFlag((fourthByte & segment_metadata_flag_bitmask) >> 3);
 
     // To fit in 3 bits, CFDP standard specifies that the size is
     // encoded as a size - 1.
-    lengthOfEntityIDs   = ((fourthByte & ENTITY_ID_LENGTH_BITMASK) >> 4) + 1;
-    lengthOfTransaction = ((fourthByte & TRANSACTION_LENGTH_BITMASK) >> 0) + 1;
+    lengthOfEntityIDs   = ((fourthByte & entity_id_length_bitmask) >> 4) + 1;
+    lengthOfTransaction = ((fourthByte & transaction_length_bitmask) >> 0) + 1;
 
     sourceEntityID = utils::bytesToInt<uint64_t>(memory, 4, lengthOfEntityIDs);
     transactionSequenceNumber =
