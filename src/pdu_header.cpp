@@ -23,12 +23,14 @@ constexpr uint8_t TRANSACTION_LENGTH_BITMASK    = 0b00000111;
 constexpr uint8_t MIN_HEADER_SIZE_BYTES = CONST_HEADER_SIZE_BYTES + 3;
 } // namespace cfdp::pdu::header
 
+namespace utils     = ::cfdp::internal::utils;
+namespace exception = ::cfdp::internal::exception;
+
 cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memory)
 {
     if (memory.size() < MIN_HEADER_SIZE_BYTES)
     {
-        throw cfdp::exception::DecodeFromBytesException{
-            "Passed memory does not contain enough bytes"};
+        throw exception::DecodeFromBytesException{"Passed memory does not contain enough bytes"};
     }
 
     const auto firstByte = memory[0];

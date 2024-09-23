@@ -8,8 +8,10 @@
 
 #include "internal_exceptions.hpp"
 
-namespace utils
+namespace cfdp::internal::utils
 {
+namespace exception = ::cfdp::internal::exception;
+
 std::vector<uint8_t> intToBytes(uint64_t value, uint8_t size);
 
 template <class T>
@@ -28,11 +30,11 @@ inline decltype(auto) toUnderlying(T e) noexcept
 {
     return static_cast<std::underlying_type_t<T>>(e);
 }
-} // namespace utils
+} // namespace cfdp::internal::utils
 
 template <class T>
     requires std::unsigned_integral<T>
-T utils::bytesToInt(std::span<uint8_t const> memory, uint32_t offset, uint32_t size)
+T cfdp::internal::utils::bytesToInt(std::span<uint8_t const> memory, uint32_t offset, uint32_t size)
 {
     // NOTE: 21.09.2024 <@uncommon-nickname>
     // Checking this size is rather important, creating a subspan
@@ -40,15 +42,14 @@ T utils::bytesToInt(std::span<uint8_t const> memory, uint32_t offset, uint32_t s
     // undefined behaviour!
     if (memory.size() < offset + size)
     {
-        throw cfdp::exception::DecodeFromBytesException{
-            "Passed memory does not contain enough bytes"};
+        throw exception::DecodeFromBytesException{"Passed memory does not contain enough bytes"};
     }
 
     auto subspan = memory.subspan(offset, size);
 
     if (subspan.size() > sizeof(T))
     {
-        throw cfdp::exception::DecodeFromBytesException{"Memory chunk will not fit in size T"};
+        throw exception::DecodeFromBytesException{"Memory chunk will not fit in size T"};
     }
 
     T result{};

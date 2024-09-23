@@ -3,7 +3,7 @@
 #include <exception>
 #include <string>
 
-namespace cfdp::exception
+namespace cfdp::internal::exception
 {
 class CfdpException : public std::exception
 {
@@ -31,4 +31,4 @@ class DecodeFromBytesException : public CfdpException
   public:
     DecodeFromBytesException(const char* message) : CfdpException(message) {}
 };
-} // namespace cfdp::exception
+} // namespace cfdp::internal::exception
