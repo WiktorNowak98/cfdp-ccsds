@@ -9,8 +9,6 @@
 
 namespace cfdp::pdu::header
 {
-// Without last three fields, PDU header has constant size of 32 bits.
-constexpr uint16_t CONST_HEADER_SIZE_BYTES = sizeof(uint32_t);
 
 class PduHeader : PduInterface
 {
@@ -33,7 +31,7 @@ class PduHeader : PduInterface
 
     [[nodiscard]] inline uint16_t getRawSize() const override
     {
-        return CONST_HEADER_SIZE_BYTES + (2 * lengthOfEntityIDs) + lengthOfTransaction;
+        return const_header_size_bytes + (2 * lengthOfEntityIDs) + lengthOfTransaction;
     };
 
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
@@ -56,5 +54,10 @@ class PduHeader : PduInterface
     uint64_t sourceEntityID;
     uint64_t transactionSequenceNumber;
     uint64_t destinationEntityID;
+
+    // Without last three fields, PDU header has constant size of 32 bits.
+    static constexpr uint16_t const_header_size_bytes = sizeof(uint32_t);
+    // Last three fields have to AT LEAST contain a single byte each.
+    static constexpr uint16_t min_header_size_bytes = const_header_size_bytes + 3;
 };
 } // namespace cfdp::pdu::header
