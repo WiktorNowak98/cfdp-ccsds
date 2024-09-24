@@ -7,7 +7,7 @@ project(
     LANGUAGES CXX
 )
 
-option(COMPILE_TESTS "should the test be compileds")
+option(COMPILE_TESTS "Boolean indicating if tests should be compiled")
 
 set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
