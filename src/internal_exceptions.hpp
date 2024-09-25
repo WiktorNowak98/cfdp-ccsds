@@ -31,4 +31,10 @@ class DecodeFromBytesException : public CfdpException
   public:
     DecodeFromBytesException(const char* message) : CfdpException(message) {}
 };
+
+class PduConstructionException : public CfdpException
+{
+  public:
+    PduConstructionException(const char* message) : CfdpException(message) {}
+};
 } // namespace cfdp::internal::exception

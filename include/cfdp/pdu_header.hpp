@@ -17,23 +17,26 @@ class PduHeader : PduInterface
               uint16_t pduDataFieldLength, SegmentationControl segmentationControl,
               uint8_t lengthOfEntityIDs, SegmentMetadataFlag segmentMetadataFlag,
               uint8_t lengthOfTransaction, uint64_t sourceEntityID,
-              uint64_t transactionSequenceNumber, uint64_t destinationEntityID)
-        : version(version), pduType(pduType), direction(direction),
-          transmissionMode(transmissionMode), crcFlag(crcFlag), largeFileFlag(largeFileFlag),
-          pduDataFieldLength(pduDataFieldLength), segmentationControl(segmentationControl),
-          lengthOfEntityIDs(lengthOfEntityIDs), segmentMetadataFlag(segmentMetadataFlag),
-          lengthOfTransaction(lengthOfTransaction), sourceEntityID(sourceEntityID),
-          transactionSequenceNumber(transactionSequenceNumber),
-          destinationEntityID(destinationEntityID)
-    {}
+              uint64_t transactionSequenceNumber, uint64_t destinationEntityID);
     PduHeader(std::span<uint8_t const> memory);
 
-    [[nodiscard]] inline uint16_t getRawSize() const override
-    {
-        return const_header_size_bytes + (2 * lengthOfEntityIDs) + lengthOfTransaction;
-    };
-
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
+    [[nodiscard]] uint16_t getRawSize() const override;
+
+    [[nodiscard]] auto getVersion() const { return version; }
+    [[nodiscard]] auto getPduType() const { return pduType; }
+    [[nodiscard]] auto getDirection() const { return direction; }
+    [[nodiscard]] auto getTransmissionMode() const { return transmissionMode; }
+    [[nodiscard]] auto getCrcFlag() const { return crcFlag; }
+    [[nodiscard]] auto getLargeFileFlag() const { return largeFileFlag; }
+    [[nodiscard]] auto getPduDataFieldLength() const { return pduDataFieldLength; }
+    [[nodiscard]] auto getSegmentationControl() const { return segmentationControl; }
+    [[nodiscard]] auto getLengthOfEntityIDs() const { return lengthOfEntityIDs; }
+    [[nodiscard]] auto getSegmentMetadataFlag() const { return segmentMetadataFlag; }
+    [[nodiscard]] auto getLengthOfTransaction() const { return lengthOfTransaction; }
+    [[nodiscard]] auto getSourceEntityID() const { return sourceEntityID; }
+    [[nodiscard]] auto getTransactionNumber() const { return transactionSequenceNumber; }
+    [[nodiscard]] auto getDestinationEntityID() const { return destinationEntityID; }
 
   private:
     // Used version of the CFDP protocol. Between 0 and 7.
@@ -60,3 +63,8 @@ class PduHeader : PduInterface
     static constexpr uint16_t min_header_size_bytes = const_header_size_bytes + 3;
 };
 } // namespace cfdp::pdu::header
+
+inline uint16_t cfdp::pdu::header::PduHeader::getRawSize() const
+{
+    return const_header_size_bytes + (2 * lengthOfEntityIDs) + lengthOfTransaction;
+};

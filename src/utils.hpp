@@ -14,6 +14,8 @@ namespace exception = ::cfdp::internal::exception;
 
 std::vector<uint8_t> intToBytes(uint64_t value, uint8_t size);
 
+size_t bytesNeeded(uint64_t number);
+
 template <class T>
     requires std::unsigned_integral<T>
 T bytesToInt(std::span<uint8_t const> memory, uint32_t offset, uint32_t size);

@@ -24,6 +24,45 @@ constexpr uint8_t transaction_length_bitmask    = 0b0000'0111;
 namespace utils     = ::cfdp::internal::utils;
 namespace exception = ::cfdp::internal::exception;
 
+cfdp::pdu::header::PduHeader::PduHeader(
+    uint8_t version, PduType pduType, Direction direction, TransmissionMode transmissionMode,
+    CrcFlag crcFlag, LargeFileFlag largeFileFlag, uint16_t pduDataFieldLength,
+    SegmentationControl segmentationControl, uint8_t lengthOfEntityIDs,
+    SegmentMetadataFlag segmentMetadataFlag, uint8_t lengthOfTransaction, uint64_t sourceEntityID,
+    uint64_t transactionSequenceNumber, uint64_t destinationEntityID)
+    : version(version), pduType(pduType), direction(direction), transmissionMode(transmissionMode),
+      crcFlag(crcFlag), largeFileFlag(largeFileFlag), pduDataFieldLength(pduDataFieldLength),
+      segmentationControl(segmentationControl), lengthOfEntityIDs(lengthOfEntityIDs),
+      segmentMetadataFlag(segmentMetadataFlag), lengthOfTransaction(lengthOfTransaction),
+      sourceEntityID(sourceEntityID), transactionSequenceNumber(transactionSequenceNumber),
+      destinationEntityID(destinationEntityID)
+{
+    if (lengthOfEntityIDs == 0 || lengthOfTransaction == 0)
+    {
+        throw exception::PduConstructionException{
+            "Size of the entityIDs and transaction has to be > 0"};
+    }
+
+    if (lengthOfEntityIDs < utils::bytesNeeded(sourceEntityID) ||
+        lengthOfEntityIDs < utils::bytesNeeded(destinationEntityID))
+    {
+        throw exception::PduConstructionException{
+            "Entity ID is too large to fit in specified size"};
+    }
+
+    if (lengthOfTransaction < utils::bytesNeeded(transactionSequenceNumber))
+    {
+        throw exception::PduConstructionException{
+            "Transaction number is too large to fit in specified size"};
+    }
+
+    if (sourceEntityID == destinationEntityID)
+    {
+        throw exception::PduConstructionException{
+            "Source and destination entity IDs shouldn't be the same"};
+    }
+}
+
 cfdp::pdu::header::PduHeader::PduHeader(std::span<uint8_t const> memory)
 {
     if (memory.size() < min_header_size_bytes)
