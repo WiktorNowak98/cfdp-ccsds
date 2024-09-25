@@ -5,6 +5,7 @@
 #include <cfdp/pdu_header.hpp>
 
 #include <array>
+#include <memory>
 
 using ::testing::ElementsAreArray;
 
@@ -17,84 +18,60 @@ using ::cfdp::pdu::header::SegmentationControl;
 using ::cfdp::pdu::header::SegmentMetadataFlag;
 using ::cfdp::pdu::header::TransmissionMode;
 
+class PduHeaderTest : public testing::Test
+{
+  protected:
+    static constexpr std::array<uint8_t, 11> encoded_header_frame = {51, 1, 248, 4,   1, 0,
+                                                                     0,  0, 5,   150, 2};
+    std::unique_ptr<PduHeader> buildHeader(uint8_t lengthOfEntityIDs, uint64_t sourceEntityID,
+                                           uint64_t destinationEntityID,
+                                           uint8_t lengthOfTransaction, uint64_t transactionNumber)
+    {
+        return std::make_unique<PduHeader>(
+            1, PduType::FileData, Direction::TowardsReceiver, TransmissionMode::Acknowledged,
+            CrcFlag::CrcPresent, LargeFileFlag::LargeFile, 500,
+            SegmentationControl::BoundariesNotPreserved, lengthOfEntityIDs,
+            SegmentMetadataFlag::NotPresent, lengthOfTransaction, sourceEntityID, transactionNumber,
+            destinationEntityID);
+    }
+};
+
+class PduHeaderConstructorTest
+    : public PduHeaderTest,
+      public testing::WithParamInterface<std::tuple<uint8_t, uint64_t, uint64_t, uint8_t, uint64_t>>
+{};
+
+INSTANTIATE_TEST_SUITE_P(
+    HeaderInitializerListConstructor, PduHeaderConstructorTest,
+    testing::Values(std::make_tuple(0, 1, 2, 1, 1),    // lengthOfEntityIDs = 0
+                    std::make_tuple(1, 1, 2, 0, 1),    // lengthOfTransaction = 0
+                    std::make_tuple(1, 1400, 2, 1, 1), // sourceEntityID too big
+                    std::make_tuple(1, 1, 1400, 1, 1), // destEntityID too big
+                    std::make_tuple(1, 1, 2, 1, 1400), // transactionNumber too big
+                    std::make_tuple(1, 1, 1, 1, 1)));  // sourceEntityID == destEntityID
+
 // TODO: 25.09.2024 <@uncommon-nickname>
 // We need to change those assertions the the correct exceptions when
 // we get access to the private headers. For now any throw will
 // suffice.
-namespace
+TEST_P(PduHeaderConstructorTest, TestPduHeaderConstructorExceptions)
 {
-constexpr std::array<uint8_t, 11> encoded_header_frame = {51, 1, 248, 4, 1, 0, 0, 0, 5, 150, 2};
+    auto [lengthOfEntityIDs, sourceEntityID, destEntityID, lengthOfTransaction, transactionNumber] =
+        GetParam();
+    ASSERT_ANY_THROW(buildHeader(lengthOfEntityIDs, sourceEntityID, destEntityID,
+                                 lengthOfTransaction, transactionNumber));
 }
 
-TEST(PduHeaderTest, TestHeaderConstructionForbiddenLengthOfEntityIDs)
+TEST_F(PduHeaderTest, TestHeaderEncoding)
 {
-    ASSERT_ANY_THROW(PduHeader(1, PduType::FileData, Direction::TowardsReceiver,
-                               TransmissionMode::Acknowledged, CrcFlag::CrcPresent,
-                               LargeFileFlag::LargeFile, 500,
-                               SegmentationControl::BoundariesNotPreserved, 0,
-                               SegmentMetadataFlag::NotPresent, 5, 1, 1, 2));
-}
+    auto header  = buildHeader(1, 1, 2, 5, 1430);
+    auto encoded = header->encodeToBytes();
 
-TEST(PduHeaderTest, TestHeaderConstructionForbiddenLengthOfTransaction)
-{
-    ASSERT_ANY_THROW(PduHeader(1, PduType::FileData, Direction::TowardsReceiver,
-                               TransmissionMode::Acknowledged, CrcFlag::CrcPresent,
-                               LargeFileFlag::LargeFile, 500,
-                               SegmentationControl::BoundariesNotPreserved, 1,
-                               SegmentMetadataFlag::NotPresent, 0, 1, 1, 2));
-}
-
-TEST(PduHeaderTest, TestHeaderConstructionSourceEntityIDTooBigToFit)
-{
-    ASSERT_ANY_THROW(PduHeader(1, PduType::FileData, Direction::TowardsReceiver,
-                               TransmissionMode::Acknowledged, CrcFlag::CrcPresent,
-                               LargeFileFlag::LargeFile, 500,
-                               SegmentationControl::BoundariesNotPreserved, 1,
-                               SegmentMetadataFlag::NotPresent, 1, 1400, 1, 2));
-}
-
-TEST(PduHeaderTest, TestHeaderConstructionDestinationEntityIDTooBigToFit)
-{
-    ASSERT_ANY_THROW(PduHeader(1, PduType::FileData, Direction::TowardsReceiver,
-                               TransmissionMode::Acknowledged, CrcFlag::CrcPresent,
-                               LargeFileFlag::LargeFile, 500,
-                               SegmentationControl::BoundariesNotPreserved, 1,
-                               SegmentMetadataFlag::NotPresent, 1, 1, 1, 1400));
-}
-
-TEST(PduHeaderTest, TestHeaderConstructionTransactionTooBigToFit)
-{
-    ASSERT_ANY_THROW(PduHeader(1, PduType::FileData, Direction::TowardsReceiver,
-                               TransmissionMode::Acknowledged, CrcFlag::CrcPresent,
-                               LargeFileFlag::LargeFile, 500,
-                               SegmentationControl::BoundariesNotPreserved, 1,
-                               SegmentMetadataFlag::NotPresent, 1, 1, 1400, 1));
-}
-
-TEST(PduHeaderTest, TestHeaderConstructionSameEntityIDs)
-{
-    ASSERT_ANY_THROW(PduHeader(1, PduType::FileData, Direction::TowardsReceiver,
-                               TransmissionMode::Acknowledged, CrcFlag::CrcPresent,
-                               LargeFileFlag::LargeFile, 500,
-                               SegmentationControl::BoundariesNotPreserved, 1,
-                               SegmentMetadataFlag::NotPresent, 1, 1, 1, 1));
-}
-
-TEST(PduHeaderTest, TestHeaderEncoding)
-{
-    auto header =
-        PduHeader(1, PduType::FileData, Direction::TowardsReceiver, TransmissionMode::Acknowledged,
-                  CrcFlag::CrcPresent, LargeFileFlag::LargeFile, 500,
-                  SegmentationControl::BoundariesNotPreserved, 1, SegmentMetadataFlag::NotPresent,
-                  5, 1, 1430, 2);
-
-    auto encoded = header.encodeToBytes();
-
-    ASSERT_EQ(header.getRawSize(), 4 + (1 * 2) + 5);
+    ASSERT_EQ(header->getRawSize(), 4 + (1 * 2) + 5);
     EXPECT_THAT(encoded, ElementsAreArray(encoded_header_frame));
 }
 
-TEST(PduHeaderTest, TestHeaderDecoding)
+TEST_F(PduHeaderTest, TestHeaderDecoding)
 {
     auto encodedHeaderView =
         std::span<uint8_t const>{encoded_header_frame.begin(), encoded_header_frame.end()};
@@ -117,7 +94,7 @@ TEST(PduHeaderTest, TestHeaderDecoding)
     ASSERT_EQ(header.getDestinationEntityID(), 2);
 }
 
-TEST(PduHeaderTest, TestHeaderDecodingTooShortByteStream)
+TEST_F(PduHeaderTest, TestHeaderDecodingTooShortByteStream)
 {
     auto incompleteHeaderView =
         std::span<uint8_t const>{encoded_header_frame.begin(), encoded_header_frame.end() - 3};
