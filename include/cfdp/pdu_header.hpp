@@ -9,7 +9,6 @@
 
 namespace cfdp::pdu::header
 {
-
 class PduHeader : PduInterface
 {
   public:

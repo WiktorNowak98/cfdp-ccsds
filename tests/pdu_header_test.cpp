@@ -1,11 +1,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <array>
-#include <vector>
-
 #include <cfdp/pdu_enums.hpp>
 #include <cfdp/pdu_header.hpp>
+
+#include <array>
 
 using ::testing::ElementsAreArray;
 
@@ -18,12 +17,13 @@ using ::cfdp::pdu::header::SegmentationControl;
 using ::cfdp::pdu::header::SegmentMetadataFlag;
 using ::cfdp::pdu::header::TransmissionMode;
 
-namespace
+class PduHeaderTest : public testing::Test
 {
-constexpr std::array<uint8_t, 7> encoded_header_frame{51, 0, 5, 0, 1, 1, 2};
-}
+  protected:
+    constexpr static std::array<uint8_t, 7> encoded_header_frame{51, 0, 5, 0, 1, 1, 2};
+};
 
-TEST(PduHeader, TestHeaderEncoding)
+TEST_F(PduHeaderTest, TestHeaderEncoding)
 {
     auto header =
         PduHeader(1, PduType::FileData, Direction::TowardsReceiver, TransmissionMode::Acknowledged,
@@ -37,7 +37,7 @@ TEST(PduHeader, TestHeaderEncoding)
     EXPECT_THAT(encoded, ElementsAreArray(encoded_header_frame));
 }
 
-TEST(PduHeader, TestHeaderDecoding)
+TEST_F(PduHeaderTest, TestHeaderDecoding)
 {
     auto encodedHeaderView =
         std::span<uint8_t const>{encoded_header_frame.begin(), encoded_header_frame.end()};
