@@ -1,8 +1,11 @@
-Checks: "clang-diagnostic-*,clang-analyzer-*,cppcoreguidelines-*,modernize-*,-modernize-use-trailing-return-type"
+Checks: "
+    clang-diagnostic-*,
+    clang-analyzer-*,
+    cppcoreguidelines-*,
+    modernize-*,
+    -modernize-use-trailing-return-type,
+    -cppcoreguidelines-avoid-magic-numbers,
+"
 WarningsAsErrors: true
 HeaderFilterRegex: ".*"
 FormatStyle: llvm
-
-CheckOptions:
-  cppcoreguidelines-avoid-magic-numbers.IgnoredIntegerValues: '1;2;3;4;5;6;7;8;9'
-  cppcoreguidelines-avoid-magic-numbers.IgnoreBitFieldsWidths: true

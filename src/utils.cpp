@@ -1,3 +1,5 @@
+#include <bit>
+
 #include "utils.hpp"
 
 std::vector<uint8_t> cfdp::internal::utils::intToBytes(uint64_t value, uint8_t size)
@@ -11,3 +13,11 @@ std::vector<uint8_t> cfdp::internal::utils::intToBytes(uint64_t value, uint8_t s
 
     return std::vector<uint8_t>{view.rbegin(), view.rend()};
 };
+
+size_t cfdp::internal::utils::bytesNeeded(uint64_t number)
+{
+    size_t bitsNeeded  = std::bit_width(number);
+    size_t bytesNeeded = bitsNeeded == 0 ? 1 : (bitsNeeded + 7) / 8;
+
+    return bytesNeeded;
+}

@@ -1,18 +1,20 @@
 #pragma once
 
+#include <cfdp/pdu_exceptions.hpp>
+
 #include <cstdint>
 #include <iterator>
 #include <span>
 #include <type_traits>
 #include <vector>
 
-#include "internal_exceptions.hpp"
-
 namespace cfdp::internal::utils
 {
-namespace exception = ::cfdp::internal::exception;
+namespace exception = ::cfdp::pdu::exception;
 
 std::vector<uint8_t> intToBytes(uint64_t value, uint8_t size);
+
+size_t bytesNeeded(uint64_t number);
 
 template <class T>
     requires std::unsigned_integral<T>
