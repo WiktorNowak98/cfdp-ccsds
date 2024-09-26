@@ -2,12 +2,18 @@
 #include <gtest/gtest.h>
 
 #include <cfdp/pdu_enums.hpp>
+#include <cfdp/pdu_exceptions.hpp>
 #include <cfdp/pdu_header.hpp>
 
 #include <array>
+#include <functional>
 #include <memory>
+#include <tuple>
 
 using ::testing::ElementsAreArray;
+
+using ::cfdp::pdu::exception::DecodeFromBytesException;
+using ::cfdp::pdu::exception::PduConstructionException;
 
 using ::cfdp::pdu::header::CrcFlag;
 using ::cfdp::pdu::header::Direction;
@@ -20,7 +26,7 @@ using ::cfdp::pdu::header::TransmissionMode;
 
 class PduHeaderTest : public testing::Test
 {
-  protected:
+  public:
     static constexpr std::array<uint8_t, 11> encoded_header_frame = {51, 1, 248, 4,   1, 0,
                                                                      0,  0, 5,   150, 2};
     std::unique_ptr<PduHeader> buildHeader(uint8_t lengthOfEntityIDs, uint64_t sourceEntityID,
@@ -50,16 +56,11 @@ INSTANTIATE_TEST_SUITE_P(
                     std::make_tuple(1, 1, 2, 1, 1400), // transactionNumber too big
                     std::make_tuple(1, 1, 1, 1, 1)));  // sourceEntityID == destEntityID
 
-// TODO: 25.09.2024 <@uncommon-nickname>
-// We need to change those assertions the the correct exceptions when
-// we get access to the private headers. For now any throw will
-// suffice.
 TEST_P(PduHeaderConstructorTest, TestPduHeaderConstructorExceptions)
 {
-    auto [lengthOfEntityIDs, sourceEntityID, destEntityID, lengthOfTransaction, transactionNumber] =
-        GetParam();
-    ASSERT_ANY_THROW(buildHeader(lengthOfEntityIDs, sourceEntityID, destEntityID,
-                                 lengthOfTransaction, transactionNumber));
+    auto params = GetParam();
+    ASSERT_THROW(std::apply(std::bind_front(&PduHeaderConstructorTest::buildHeader, this), params),
+                 PduConstructionException);
 }
 
 TEST_F(PduHeaderTest, TestHeaderEncoding)
@@ -99,5 +100,5 @@ TEST_F(PduHeaderTest, TestHeaderDecodingTooShortByteStream)
     auto incompleteHeaderView =
         std::span<uint8_t const>{encoded_header_frame.begin(), encoded_header_frame.end() - 3};
 
-    ASSERT_ANY_THROW(PduHeader{incompleteHeaderView});
+    ASSERT_THROW(PduHeader{incompleteHeaderView}, DecodeFromBytesException);
 }
