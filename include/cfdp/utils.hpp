@@ -1,14 +1,14 @@
 #pragma once
 
-#include <cfdp/pdu_exceptions.hpp>
-
 #include <cstdint>
 #include <iterator>
 #include <span>
 #include <type_traits>
 #include <vector>
 
-namespace cfdp::internal::utils
+#include "pdu_exceptions.hpp"
+
+namespace cfdp::utils
 {
 namespace exception = ::cfdp::pdu::exception;
 
@@ -32,11 +32,11 @@ inline decltype(auto) toUnderlying(T e) noexcept
 {
     return static_cast<std::underlying_type_t<T>>(e);
 }
-} // namespace cfdp::internal::utils
+} // namespace cfdp::utils
 
 template <class T>
     requires std::unsigned_integral<T>
-T cfdp::internal::utils::bytesToInt(std::span<uint8_t const> memory, uint32_t offset, uint32_t size)
+T cfdp::utils::bytesToInt(std::span<uint8_t const> memory, uint32_t offset, uint32_t size)
 {
     // NOTE: 21.09.2024 <@uncommon-nickname>
     // Checking this size is rather important, creating a subspan

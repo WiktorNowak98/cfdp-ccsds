@@ -1,8 +1,7 @@
 #include <cfdp/pdu_enums.hpp>
 #include <cfdp/pdu_exceptions.hpp>
 #include <cfdp/pdu_header.hpp>
-
-#include "utils.hpp"
+#include <cfdp/utils.hpp>
 
 namespace
 {
@@ -21,7 +20,7 @@ constexpr uint8_t segment_metadata_flag_bitmask = 0b0000'1000;
 constexpr uint8_t transaction_length_bitmask    = 0b0000'0111;
 } // namespace
 
-namespace utils     = ::cfdp::internal::utils;
+namespace utils     = ::cfdp::utils;
 namespace exception = ::cfdp::pdu::exception;
 
 cfdp::pdu::header::PduHeader::PduHeader(
