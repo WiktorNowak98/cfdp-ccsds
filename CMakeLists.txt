@@ -20,6 +20,7 @@ find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
 set(CLANG_TIDY_COMMAND "${CLANG_TIDY_EXE}" "-config-file=${cfdp_SOURCE_DIR}/.clang-tidy")
 
 add_subdirectory(src)
+add_subdirectory(app)
 
 if(${COMPILE_TESTS})
     enable_testing()

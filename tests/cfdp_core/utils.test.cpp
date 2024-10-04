@@ -1,8 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <cfdp/pdu_exceptions.hpp>
-#include <cfdp/utils.hpp>
+#include <cfdp_core/pdu_exceptions.hpp>
+#include <cfdp_core/utils.hpp>
 
 #include <array>
 #include <span>
