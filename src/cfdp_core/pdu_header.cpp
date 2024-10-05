@@ -1,7 +1,7 @@
-#include <cfdp/pdu_enums.hpp>
-#include <cfdp/pdu_exceptions.hpp>
-#include <cfdp/pdu_header.hpp>
-#include <cfdp/utils.hpp>
+#include <cfdp_core/pdu_enums.hpp>
+#include <cfdp_core/pdu_exceptions.hpp>
+#include <cfdp_core/pdu_header.hpp>
+#include <cfdp_core/utils.hpp>
 
 namespace
 {

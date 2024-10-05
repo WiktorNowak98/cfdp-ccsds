@@ -1,9 +1,2 @@
-file(GLOB HEADER_LIST CONFIGURE_DEPENDS "${cfdp_SOURCE_DIR}/include/cfdp/*.hpp")
-file(GLOB SOURCE_LIST "*.cpp")
-
-add_library(cfdp_lib ${SOURCE_LIST} ${HEADER_LIST})
-
-target_include_directories(cfdp_lib PUBLIC "${cfdp_SOURCE_DIR}/include/")
-target_compile_features(cfdp_lib PUBLIC cxx_std_23)
-
-set_target_properties(cfdp_lib PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+add_subdirectory(cfdp_core)
+add_subdirectory(cfdp_runtime)

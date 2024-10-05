@@ -7,9 +7,5 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-file(GLOB TESTS "*.cpp")
-
-add_executable(tests ${TESTS})
-target_link_libraries(tests cfdp_lib gtest_main gmock_main)
-
-gtest_discover_tests(tests)
+add_subdirectory(cfdp_core)
+add_subdirectory(cfdp_runtime)
