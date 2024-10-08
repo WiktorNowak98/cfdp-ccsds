@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <exception>
 #include <functional>
 #include <future>
@@ -10,9 +11,38 @@
 
 #include "atomic_queue.hpp"
 
-namespace cfdp::runtime::thread_pool
+namespace
 {
 using ::cfdp::runtime::atomic::AtomicQueue;
+} // namespace
+
+namespace cfdp::runtime::thread_pool
+{
+template <class T>
+class Future
+{
+  public:
+    Future(std::future<T> future) : internal(std::move(future)) {}
+
+    ~Future()               = default;
+    Future(Future&& future) = default;
+
+    Future(const Future&)            = delete;
+    Future& operator=(Future const&) = delete;
+    Future& operator=(Future&&)      = delete;
+
+    T get() { return internal.get(); }
+
+    [[nodiscard]] std::future_status poll() const noexcept
+    {
+        return internal.wait_for(std::chrono::seconds(0));
+    };
+
+    [[nodiscard]] bool isReady() const noexcept { return poll() == std::future_status::ready; }
+
+  private:
+    std::future<T> internal;
+};
 
 class ThreadPool
 {
@@ -26,7 +56,7 @@ class ThreadPool
     ThreadPool& operator=(ThreadPool&&)      = delete;
 
     template <class T, class... Args>
-    std::future<T> dispatchTask(std::function<T(Args...)> func, Args... args) noexcept;
+    Future<T> dispatchTask(std::function<T(Args...)> func, Args... args) noexcept;
 
     void shutdown() noexcept;
 
@@ -37,9 +67,14 @@ class ThreadPool
 };
 } // namespace cfdp::runtime::thread_pool
 
+namespace
+{
+using ::cfdp::runtime::thread_pool::Future;
+using ::cfdp::runtime::thread_pool::ThreadPool;
+} // namespace
+
 template <class T, class... Args>
-std::future<T> cfdp::runtime::thread_pool::ThreadPool::dispatchTask(std::function<T(Args...)> func,
-                                                                    Args... args) noexcept
+Future<T> ThreadPool::dispatchTask(std::function<T(Args...)> func, Args... args) noexcept
 {
     // NOTE: 06.10.2024 <@uncommon-nickname>
     // In a perfect world we would just move the promise into the lambda,
@@ -68,5 +103,5 @@ std::future<T> cfdp::runtime::thread_pool::ThreadPool::dispatchTask(std::functio
 
     queue.push(std::move(wrapper));
 
-    return future;
+    return Future{std::move(future)};
 };
