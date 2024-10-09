@@ -22,7 +22,7 @@ template <class T>
 class Future
 {
   public:
-    Future(std::future<T> future) : internal(std::move(future)) {}
+    explicit Future(std::future<T> future) : internal(std::move(future)) {}
 
     ~Future()               = default;
     Future(Future&& future) = default;
@@ -31,14 +31,17 @@ class Future
     Future& operator=(Future const&) = delete;
     Future& operator=(Future&&)      = delete;
 
-    T get() { return internal.get(); }
+    [[nodiscard]] inline T get() { return internal.get(); }
 
-    [[nodiscard]] std::future_status poll() const noexcept
+    [[nodiscard]] inline std::future_status poll() const noexcept
     {
         return internal.wait_for(std::chrono::seconds(0));
     };
 
-    [[nodiscard]] bool isReady() const noexcept { return poll() == std::future_status::ready; }
+    [[nodiscard]] inline bool isReady() const noexcept
+    {
+        return poll() == std::future_status::ready;
+    }
 
   private:
     std::future<T> internal;
@@ -47,7 +50,7 @@ class Future
 class ThreadPool
 {
   public:
-    ThreadPool(size_t numWorkers = std::thread::hardware_concurrency());
+    explicit ThreadPool(size_t numWorkers = std::thread::hardware_concurrency());
     ~ThreadPool() { shutdown(); };
 
     ThreadPool(const ThreadPool&)            = delete;
@@ -55,8 +58,9 @@ class ThreadPool
     ThreadPool(ThreadPool&&)                 = delete;
     ThreadPool& operator=(ThreadPool&&)      = delete;
 
-    template <class T, class... Args>
-    Future<T> dispatchTask(std::function<T(Args...)> func, Args... args) noexcept;
+    template <class Functor>
+        requires std::invocable<Functor>
+    auto dispatchTask(Functor&& func) noexcept -> Future<decltype(func())>;
 
     void shutdown() noexcept;
 
@@ -73,26 +77,17 @@ using ::cfdp::runtime::thread_pool::Future;
 using ::cfdp::runtime::thread_pool::ThreadPool;
 } // namespace
 
-template <class T, class... Args>
-Future<T> ThreadPool::dispatchTask(std::function<T(Args...)> func, Args... args) noexcept
+template <class Functor>
+    requires std::invocable<Functor>
+auto ThreadPool::dispatchTask(Functor&& func) noexcept -> Future<decltype(func())>
 {
-    // NOTE: 06.10.2024 <@uncommon-nickname>
-    // In a perfect world we would just move the promise into the lambda,
-    // however we cannot assign the moving lambda to the std::function
-    // handle. For now we can wrap the promise with `shared_ptr` and
-    // copy it inside, dropping the original reference.
-    auto promise = std::make_shared<std::promise<T>>();
-    auto future  = promise->get_future();
+    auto promise = std::make_shared<std::promise<decltype(func())>>();
+    auto functor = std::forward<Functor>(func);
 
-    // NOTE: 06.10.2024 <@uncommon-nickname>
-    // For the same reason as above, we cannot really use std::forward
-    // to perform variadic move into the lambda. For now let's make
-    // a copy, for memory safety only `shared_ptrs` should be passed
-    // here anyway.
-    std::function<void()> wrapper = [promise, func, args...]() mutable {
+    std::function<void()> wrapper = [promise, functor]() mutable {
         try
         {
-            auto result = func(args...);
+            auto result = std::invoke(functor);
             promise->set_value(result);
         }
         catch (...)
@@ -101,7 +96,7 @@ Future<T> ThreadPool::dispatchTask(std::function<T(Args...)> func, Args... args)
         }
     };
 
-    queue.push(std::move(wrapper));
+    queue.emplace(std::move(wrapper));
 
-    return Future{std::move(future)};
-};
+    return Future{promise->get_future()};
+}
