@@ -1,7 +1,6 @@
 #pragma once
 
 #include <atomic>
-#include <chrono>
 #include <exception>
 #include <functional>
 #include <future>
@@ -10,47 +9,14 @@
 #include <vector>
 
 #include "atomic_queue.hpp"
-
-namespace
-{
-using ::cfdp::runtime::atomic::AtomicQueue;
-} // namespace
+#include "future.hpp"
 
 namespace cfdp::runtime::thread_pool
 {
-template <class T>
-class Future
-{
-  public:
-    explicit Future(std::future<T> future) : internal(std::move(future)) {}
-
-    ~Future()               = default;
-    Future(Future&& future) = default;
-
-    Future(const Future&)            = delete;
-    Future& operator=(Future const&) = delete;
-    Future& operator=(Future&&)      = delete;
-
-    [[nodiscard]] inline T get() { return internal.get(); }
-
-    [[nodiscard]] inline std::future_status poll() const noexcept
-    {
-        return internal.wait_for(std::chrono::seconds(0));
-    };
-
-    [[nodiscard]] inline bool isReady() const noexcept
-    {
-        return poll() == std::future_status::ready;
-    }
-
-  private:
-    std::future<T> internal;
-};
-
 class ThreadPool
 {
   public:
-    explicit ThreadPool(size_t numWorkers = std::thread::hardware_concurrency());
+    explicit ThreadPool(size_t numWorkers = (std::thread::hardware_concurrency() * 2 + 1));
     ~ThreadPool() { shutdown(); };
 
     ThreadPool(const ThreadPool&)            = delete;
@@ -60,20 +26,21 @@ class ThreadPool
 
     template <class Functor>
         requires std::invocable<Functor>
-    auto dispatchTask(Functor&& func) noexcept -> Future<decltype(func())>;
+    auto dispatchTask(Functor&& func) noexcept -> future::Future<decltype(func())>;
 
     void shutdown() noexcept;
 
   private:
     std::atomic_bool shutdownFlag;
     std::vector<std::thread> workers;
-    AtomicQueue<std::function<void()>> queue;
+    atomic::AtomicQueue<std::function<void()>> queue;
 };
 } // namespace cfdp::runtime::thread_pool
 
 namespace
 {
-using ::cfdp::runtime::thread_pool::Future;
+using ::cfdp::runtime::atomic::AtomicQueue;
+using ::cfdp::runtime::future::Future;
 using ::cfdp::runtime::thread_pool::ThreadPool;
 } // namespace
 

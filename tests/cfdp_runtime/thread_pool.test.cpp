@@ -18,7 +18,12 @@ TEST(A, B)
         std::cout << s << std::endl;
         return 1;
     };
-    pool.dispatchTask(func);
+    auto future   = pool.dispatchTask(func);
+    auto sFuture  = future.makeShared();
+    auto sFuture2 = sFuture;
+
+    std::cout << sFuture2.get() << std::endl;
+    std::cout << sFuture.get() << std::endl;
+
     pool.shutdown();
-    std::cout << x << std::endl;
 }
