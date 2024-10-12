@@ -52,13 +52,13 @@ namespace cfdp::pdu::directive
 
 enum class Directive : uint8_t
 {
-    Eof       = 0x4,
-    Finished  = 0x5,
-    Ack       = 0x6,
-    Metadata  = 0x7,
-    Nak       = 0x8,
-    Promt     = 0x9,
-    KeepAlive = 0xC,
+    Eof       = 0b0100,
+    Finished  = 0b0101,
+    Ack       = 0b0110,
+    Metadata  = 0b0111,
+    Nak       = 0b1000,
+    Promt     = 0b1001,
+    KeepAlive = 0b1100,
 
 };
 
