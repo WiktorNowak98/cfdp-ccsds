@@ -16,7 +16,7 @@ namespace cfdp::runtime::thread_pool
 class ThreadPool
 {
   public:
-    explicit ThreadPool(size_t numWorkers = (std::thread::hardware_concurrency() * 2 + 1));
+    explicit ThreadPool(size_t numWorkers = std::thread::hardware_concurrency() * 2 + 1);
     ~ThreadPool() { shutdown(); };
 
     ThreadPool(const ThreadPool&)            = delete;
@@ -48,6 +48,9 @@ template <class Functor>
     requires std::invocable<Functor>
 auto ThreadPool::dispatchTask(Functor&& func) noexcept -> Future<decltype(func())>
 {
+    // Unfortunately std::function does not provide a constructor for
+    // moving lambdas. We can't directly move the promise to the task,
+    // so as a W/A we can wrap it into std::shared_ptr and copy it.
     auto promise = std::make_shared<std::promise<decltype(func())>>();
     auto functor = std::forward<Functor>(func);
 

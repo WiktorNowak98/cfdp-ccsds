@@ -10,10 +10,9 @@
 #include <vector>
 
 using ::cfdp::runtime::atomic::AtomicQueue;
-
 using ::testing::UnorderedElementsAreArray;
 
-class AtomicQueueTest : public testing::Test
+class AtomicQueueTest : public ::testing::Test
 {
   protected:
     template <class T>
