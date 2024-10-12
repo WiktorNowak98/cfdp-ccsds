@@ -7,10 +7,9 @@ cfdp::runtime::thread_pool::ThreadPool::ThreadPool(size_t numWorkers) : shutdown
 
     for (size_t i = 0; i < numWorkers; ++i)
     {
-        // NOTE: 07.10.2024 <@uncommon-nickname>
         // We can safely pass a `this` reference to every worker.
         // ThreadPool object should always outlive its children.
-        auto worker = std::thread{[&]() mutable {
+        auto worker = std::thread{[this]() mutable {
             while (!shutdownFlag.load(std::memory_order_relaxed))
             {
                 auto potentialTask = queue.tryPop();
