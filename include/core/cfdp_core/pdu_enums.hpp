@@ -46,3 +46,38 @@ enum class SegmentMetadataFlag : uint8_t
     Present    = 0b1,
 };
 } // namespace cfdp::pdu::header
+
+namespace cfdp::pdu::directive
+{
+
+enum class Directive : uint8_t
+{
+    Eof       = 0b0100,
+    Finished  = 0b0101,
+    Ack       = 0b0110,
+    Metadata  = 0b0111,
+    Nak       = 0b1000,
+    Promt     = 0b1001,
+    KeepAlive = 0b1100,
+
+};
+
+enum class Condition : uint8_t
+{
+    NoError                    = 0b0000,
+    PositiveAckLimitReached    = 0b0001,
+    KeepAliveLimitReached      = 0b0010,
+    InvalidTransmissionReached = 0b0011,
+    FilestoreRejection         = 0b0100,
+    FileChecksumFailure        = 0b0101,
+    FileSizeError              = 0b0110,
+    NakLimitReached            = 0b0111,
+    InactivityDetected         = 0b1000,
+    InvalidFileStructure       = 0b1001,
+    CheckLimitReached          = 0b1010,
+    UnsupportedChecksumType    = 0b1011,
+    SuspendRequestReceived     = 0b1110,
+    CancelRequestReceived      = 0b1111,
+};
+
+} // namespace cfdp::pdu::directive
