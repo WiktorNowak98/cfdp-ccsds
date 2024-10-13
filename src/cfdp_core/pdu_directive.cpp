@@ -13,7 +13,6 @@ constexpr uint8_t ack_directive_code_bitmask         = 0b1111'0000;
 constexpr uint8_t ack_directive_subtype_code_bitmask = 0b0000'1111;
 constexpr uint8_t ack_condition_code_bitmask         = 0b1111'0000;
 constexpr uint8_t ack_transaction_status_bitmask     = 0b0000'0011;
-
 } // namespace
 
 namespace header    = ::cfdp::pdu::header;

@@ -90,10 +90,8 @@ enum class TransactionStatus : uint8_t
 
 enum class DirectiveSubtype : uint8_t
 {
-
     Eof      = 0b0,
     Finished = 0b1,
-
 };
 
 } // namespace cfdp::pdu::directive

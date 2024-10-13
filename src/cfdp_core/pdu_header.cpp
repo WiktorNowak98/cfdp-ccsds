@@ -20,9 +20,6 @@ constexpr uint8_t segment_metadata_flag_bitmask = 0b0000'1000;
 constexpr uint8_t transaction_length_bitmask    = 0b0000'0111;
 } // namespace
 
-namespace utils     = ::cfdp::utils;
-namespace exception = ::cfdp::pdu::exception;
-
 cfdp::pdu::header::PduHeader::PduHeader(
     uint8_t version, PduType pduType, Direction direction, TransmissionMode transmissionMode,
     CrcFlag crcFlag, LargeFileFlag largeFileFlag, uint16_t pduDataFieldLength,
