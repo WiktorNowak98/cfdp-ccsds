@@ -13,12 +13,6 @@ namespace exception = ::cfdp::pdu::exception;
 
 using ::cfdp::pdu::header::LargeFileFlag;
 
-cfdp::pdu::directive::KeepAlivePdu::KeepAlivePdu(uint64_t progress)
-    : progress(progress), largeFileFlag(LargeFileFlag::LargeFile){};
-
-cfdp::pdu::directive::KeepAlivePdu::KeepAlivePdu(uint32_t progress)
-    : progress(progress), largeFileFlag(LargeFileFlag::SmallFile){};
-
 cfdp::pdu::directive::KeepAlivePdu::KeepAlivePdu(std::span<uint8_t const> memory)
 {
     const auto memory_size = memory.size();
@@ -28,16 +22,14 @@ cfdp::pdu::directive::KeepAlivePdu::KeepAlivePdu(std::span<uint8_t const> memory
         throw exception::DecodeFromBytesException("Passed memory does not contain enough bytes");
     }
 
-    if (memory[0] != (uint8_t)Directive::KeepAlive)
+    if (memory[0] != utils::toUnderlying(Directive::KeepAlive))
     {
         throw exception::DecodeFromBytesException("File Directive code is not Keep Alive Pdu");
     }
 
     largeFileFlag = (memory_size > const_small_file_size_bytes) ? LargeFileFlag::LargeFile
                                                                 : LargeFileFlag::SmallFile;
-    progress      = utils::bytesToInt<uint64_t>(
-        memory, 1,
-        (largeFileFlag == LargeFileFlag::LargeFile) ? sizeof(uint64_t) : sizeof(uint32_t));
+    progress      = utils::bytesToInt<uint64_t>(memory, 1, getProgressSize());
 };
 
 std::vector<uint8_t> cfdp::pdu::directive::KeepAlivePdu::encodeToBytes() const
@@ -47,11 +39,9 @@ std::vector<uint8_t> cfdp::pdu::directive::KeepAlivePdu::encodeToBytes() const
 
     encodedPdu.reserve(pdu_size);
 
-    encodedPdu.push_back(static_cast<uint8_t>(Directive::KeepAlive));
+    encodedPdu.push_back(utils::toUnderlying(Directive::KeepAlive));
 
-    auto progressBytes =
-        utils::intToBytes(progress, (largeFileFlag == LargeFileFlag::LargeFile) ? sizeof(uint64_t)
-                                                                                : sizeof(uint32_t));
+    auto progressBytes = utils::intToBytes(progress, getProgressSize());
     utils::concatenateVectorsInplace(progressBytes, encodedPdu);
 
     return encodedPdu;

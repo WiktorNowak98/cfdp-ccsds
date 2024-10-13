@@ -12,12 +12,11 @@ using ::cfdp::pdu::exception::DecodeFromBytesException;
 using ::cfdp::pdu::exception::PduConstructionException;
 
 using ::cfdp::pdu::directive::KeepAlivePdu;
-
 using ::cfdp::pdu::header::LargeFileFlag;
 
 class KeepAlivePduTest : public testing::Test
 {
-  public:
+  protected:
     static constexpr std::array<uint8_t, 9> encoded_large_frame = {12,  255, 255, 255, 255,
                                                                    255, 255, 255, 255};
     static constexpr std::array<uint8_t, 5> encoded_small_frame = {12, 255, 255, 255, 255};
@@ -73,7 +72,7 @@ TEST_F(KeepAlivePduTest, TestDecodingTooShortByteStream)
 
 TEST_F(KeepAlivePduTest, TestDecodingWrongFireDirectiveCode)
 {
-    static constexpr std::array<uint8_t, 5> encoded_frame = {13, 255, 255, 255, 255};
+    std::array<uint8_t, 5> encoded_frame = {13, 255, 255, 255, 255};
 
     auto encoded = std::span<uint8_t const>{encoded_frame.begin(), encoded_frame.end() - 1};
 
