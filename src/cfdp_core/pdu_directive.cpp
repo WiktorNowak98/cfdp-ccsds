@@ -71,7 +71,7 @@ cfdp::pdu::directive::AckPdu::AckPdu(std::span<uint8_t const> memory)
 {
     if (memory.size() != const_pdu_size_bytes)
     {
-        throw exception::DecodeFromBytesException("Passed memory has not valid size");
+        throw exception::DecodeFromBytesException("Passed memory has invalid size");
     }
 
     if (memory[0] != utils::toUnderlying(Directive::Ack))

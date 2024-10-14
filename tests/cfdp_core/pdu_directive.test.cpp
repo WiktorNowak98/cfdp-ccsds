@@ -1,4 +1,3 @@
-#include "gmock/gmock.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -25,6 +24,13 @@ class KeepAlivePduTest : public testing::Test
     static constexpr std::array<uint8_t, 9> encoded_large_frame = {12,  255, 255, 255, 255,
                                                                    255, 255, 255, 255};
     static constexpr std::array<uint8_t, 5> encoded_small_frame = {12, 255, 255, 255, 255};
+};
+
+class AckPduTest : public testing::Test
+{
+  protected:
+    static constexpr std::array<uint8_t, 3> encoded_eof_ack_frame      = {6, 64, 34};
+    static constexpr std::array<uint8_t, 3> encoded_finished_ack_frame = {6, 81, 34};
 };
 
 TEST_F(KeepAlivePduTest, TestEncodingSmallFile)
@@ -84,13 +90,6 @@ TEST_F(KeepAlivePduTest, TestDecodingWrongDirectiveCode)
     ASSERT_THROW(KeepAlivePdu{encoded}, cfdp::pdu::exception::DecodeFromBytesException);
 }
 
-class AckPduTest : public testing::Test
-{
-  protected:
-    static constexpr std::array<uint8_t, 3> encoded_eof_ack_frame      = {6, 64, 34};
-    static constexpr std::array<uint8_t, 3> encoded_finished_ack_frame = {6, 81, 34};
-};
-
 TEST_F(AckPduTest, TestConstructorException)
 {
     ASSERT_THROW(
@@ -105,7 +104,7 @@ TEST_F(AckPduTest, TestEncodingEofAck)
     auto encoded = pdu.encodeToBytes();
 
     ASSERT_EQ(pdu.getDirectiveCode(), Directive::Eof);
-    ASSERT_EQ(pdu.getconditionCode(), Condition::KeepAliveLimitReached);
+    ASSERT_EQ(pdu.getConditionCode(), Condition::KeepAliveLimitReached);
     ASSERT_EQ(pdu.getTransactionStatus(), TransactionStatus::Terminated);
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_eof_ack_frame));
@@ -118,7 +117,7 @@ TEST_F(AckPduTest, TestEncodingFinishedAck)
     auto encoded = pdu.encodeToBytes();
 
     ASSERT_EQ(pdu.getDirectiveCode(), Directive::Finished);
-    ASSERT_EQ(pdu.getconditionCode(), Condition::KeepAliveLimitReached);
+    ASSERT_EQ(pdu.getConditionCode(), Condition::KeepAliveLimitReached);
     ASSERT_EQ(pdu.getTransactionStatus(), TransactionStatus::Terminated);
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_finished_ack_frame));
@@ -132,7 +131,7 @@ TEST_F(AckPduTest, TestDecodingEofAck)
     auto pdu = AckPdu(encoded);
 
     ASSERT_EQ(pdu.getDirectiveCode(), Directive::Eof);
-    ASSERT_EQ(pdu.getconditionCode(), Condition::KeepAliveLimitReached);
+    ASSERT_EQ(pdu.getConditionCode(), Condition::KeepAliveLimitReached);
     ASSERT_EQ(pdu.getTransactionStatus(), TransactionStatus::Terminated);
 }
 
@@ -144,7 +143,7 @@ TEST_F(AckPduTest, TestDecodingFinishedAck)
     auto pdu = AckPdu(encoded);
 
     ASSERT_EQ(pdu.getDirectiveCode(), Directive::Finished);
-    ASSERT_EQ(pdu.getconditionCode(), Condition::KeepAliveLimitReached);
+    ASSERT_EQ(pdu.getConditionCode(), Condition::KeepAliveLimitReached);
     ASSERT_EQ(pdu.getTransactionStatus(), TransactionStatus::Terminated);
 }
 

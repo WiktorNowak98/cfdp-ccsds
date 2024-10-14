@@ -50,7 +50,7 @@ class AckPdu : PduInterface
     [[nodiscard]] inline uint16_t getRawSize() const override { return const_pdu_size_bytes; };
 
     [[nodiscard]] auto getDirectiveCode() const { return directiveCode; }
-    [[nodiscard]] auto getconditionCode() const { return conditionCode; }
+    [[nodiscard]] auto getConditionCode() const { return conditionCode; }
     [[nodiscard]] auto getTransactionStatus() const { return transactionStatus; }
 
   private:
