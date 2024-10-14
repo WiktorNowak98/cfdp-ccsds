@@ -1,13 +1,11 @@
 Checks: "
-    clang-diagnostic-*,
-    clang-analyzer-*,
-    cppcoreguidelines-*,
-    modernize-*,
-    -modernize-use-trailing-return-type,
-    -cppcoreguidelines-avoid-magic-numbers,
-    -cppcoreguidelines-non-private-member-variables-in-classes,
-"
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-non-private-member-variables-in-classes"
 WarningsAsErrors: true
 HeaderFilterRegex: ".*"
 FormatStyle: llvm
-ExcludeHeaderFilterRegex: "*.test.cpp"

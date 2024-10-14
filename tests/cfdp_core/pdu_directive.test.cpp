@@ -11,7 +11,11 @@
 using ::cfdp::pdu::exception::DecodeFromBytesException;
 using ::cfdp::pdu::exception::PduConstructionException;
 
+using ::cfdp::pdu::directive::AckPdu;
+using ::cfdp::pdu::directive::Condition;
+using ::cfdp::pdu::directive::Directive;
 using ::cfdp::pdu::directive::KeepAlivePdu;
+using ::cfdp::pdu::directive::TransactionStatus;
 using ::cfdp::pdu::header::LargeFileFlag;
 
 class KeepAlivePduTest : public testing::Test
@@ -20,6 +24,13 @@ class KeepAlivePduTest : public testing::Test
     static constexpr std::array<uint8_t, 9> encoded_large_frame = {12,  255, 255, 255, 255,
                                                                    255, 255, 255, 255};
     static constexpr std::array<uint8_t, 5> encoded_small_frame = {12, 255, 255, 255, 255};
+};
+
+class AckPduTest : public testing::Test
+{
+  protected:
+    static constexpr std::array<uint8_t, 3> encoded_eof_ack_frame      = {6, 64, 34};
+    static constexpr std::array<uint8_t, 3> encoded_finished_ack_frame = {6, 81, 34};
 };
 
 TEST_F(KeepAlivePduTest, TestEncodingSmallFile)
@@ -70,9 +81,83 @@ TEST_F(KeepAlivePduTest, TestDecodingTooShortByteStream)
     ASSERT_THROW(KeepAlivePdu{encoded}, cfdp::pdu::exception::DecodeFromBytesException);
 }
 
-TEST_F(KeepAlivePduTest, TestDecodingWrongFireDirectiveCode)
+TEST_F(KeepAlivePduTest, TestDecodingWrongDirectiveCode)
 {
     std::array<uint8_t, 5> encoded_frame = {13, 255, 255, 255, 255};
+
+    auto encoded = std::span<uint8_t const>{encoded_frame.begin(), encoded_frame.end() - 1};
+
+    ASSERT_THROW(KeepAlivePdu{encoded}, cfdp::pdu::exception::DecodeFromBytesException);
+}
+
+TEST_F(AckPduTest, TestConstructorException)
+{
+    ASSERT_THROW(
+        AckPdu(Directive::Ack, Condition::KeepAliveLimitReached, TransactionStatus::Terminated),
+        PduConstructionException);
+}
+
+TEST_F(AckPduTest, TestEncodingEofAck)
+{
+    auto pdu =
+        AckPdu(Directive::Eof, Condition::KeepAliveLimitReached, TransactionStatus::Terminated);
+    auto encoded = pdu.encodeToBytes();
+
+    ASSERT_EQ(pdu.getDirectiveCode(), Directive::Eof);
+    ASSERT_EQ(pdu.getConditionCode(), Condition::KeepAliveLimitReached);
+    ASSERT_EQ(pdu.getTransactionStatus(), TransactionStatus::Terminated);
+
+    EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_eof_ack_frame));
+}
+
+TEST_F(AckPduTest, TestEncodingFinishedAck)
+{
+    auto pdu     = AckPdu(Directive::Finished, Condition::KeepAliveLimitReached,
+                          TransactionStatus::Terminated);
+    auto encoded = pdu.encodeToBytes();
+
+    ASSERT_EQ(pdu.getDirectiveCode(), Directive::Finished);
+    ASSERT_EQ(pdu.getConditionCode(), Condition::KeepAliveLimitReached);
+    ASSERT_EQ(pdu.getTransactionStatus(), TransactionStatus::Terminated);
+
+    EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_finished_ack_frame));
+}
+
+TEST_F(AckPduTest, TestDecodingEofAck)
+{
+    auto encoded =
+        std::span<uint8_t const>{encoded_eof_ack_frame.begin(), encoded_eof_ack_frame.end()};
+
+    auto pdu = AckPdu(encoded);
+
+    ASSERT_EQ(pdu.getDirectiveCode(), Directive::Eof);
+    ASSERT_EQ(pdu.getConditionCode(), Condition::KeepAliveLimitReached);
+    ASSERT_EQ(pdu.getTransactionStatus(), TransactionStatus::Terminated);
+}
+
+TEST_F(AckPduTest, TestDecodingFinishedAck)
+{
+    auto encoded = std::span<uint8_t const>{encoded_finished_ack_frame.begin(),
+                                            encoded_finished_ack_frame.end()};
+
+    auto pdu = AckPdu(encoded);
+
+    ASSERT_EQ(pdu.getDirectiveCode(), Directive::Finished);
+    ASSERT_EQ(pdu.getConditionCode(), Condition::KeepAliveLimitReached);
+    ASSERT_EQ(pdu.getTransactionStatus(), TransactionStatus::Terminated);
+}
+
+TEST_F(AckPduTest, TestDecodingWrongByteStreamSize)
+{
+    auto encoded =
+        std::span<uint8_t const>{encoded_eof_ack_frame.begin(), encoded_eof_ack_frame.end() - 1};
+
+    ASSERT_THROW(KeepAlivePdu{encoded}, cfdp::pdu::exception::DecodeFromBytesException);
+}
+
+TEST_F(AckPduTest, TestDecodingWrongDirectiveCode)
+{
+    std::array<uint8_t, 3> encoded_frame = {12, 81, 34};
 
     auto encoded = std::span<uint8_t const>{encoded_frame.begin(), encoded_frame.end() - 1};
 

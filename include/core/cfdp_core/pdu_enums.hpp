@@ -80,4 +80,18 @@ enum class Condition : uint8_t
     CancelRequestReceived      = 0b1111,
 };
 
+enum class TransactionStatus : uint8_t
+{
+    Undefined    = 0b00,
+    Active       = 0b01,
+    Terminated   = 0b10,
+    Unrecognized = 0b11,
+};
+
+enum class DirectiveSubtype : uint8_t
+{
+    Eof      = 0b0,
+    Finished = 0b1,
+};
+
 } // namespace cfdp::pdu::directive

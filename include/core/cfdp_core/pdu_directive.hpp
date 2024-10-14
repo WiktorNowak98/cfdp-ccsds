@@ -40,4 +40,26 @@ class KeepAlivePdu : PduInterface
     }
 };
 
+class AckPdu : PduInterface
+{
+  public:
+    AckPdu(Directive directiveCode, Condition conditionCode, TransactionStatus transactionStatus);
+    AckPdu(std::span<uint8_t const> memory);
+
+    [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
+    [[nodiscard]] inline uint16_t getRawSize() const override { return const_pdu_size_bytes; };
+
+    [[nodiscard]] auto getDirectiveCode() const { return directiveCode; }
+    [[nodiscard]] auto getConditionCode() const { return conditionCode; }
+    [[nodiscard]] auto getTransactionStatus() const { return transactionStatus; }
+
+  private:
+    Directive directiveCode;
+    DirectiveSubtype directiveSubtype;
+    Condition conditionCode;
+    TransactionStatus transactionStatus;
+
+    static constexpr uint16_t const_pdu_size_bytes = sizeof(uint8_t) + sizeof(uint16_t);
+};
+
 } // namespace cfdp::pdu::directive
