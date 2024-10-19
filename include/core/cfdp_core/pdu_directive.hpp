@@ -78,7 +78,7 @@ class EndOfFile : PduInterface
 
     [[nodiscard]] inline uint16_t getRawSize() const override
     {
-        return const_pdu_size_bytes + getMaxFileSize() + getFaultLocationSize();
+        return const_pdu_size_bytes + getSizeOfFileSize() + getFaultLocationSize();
     };
 
     [[nodiscard]] auto getLargeFileFlag() const { return largeFileFlag; }
@@ -103,7 +103,7 @@ class EndOfFile : PduInterface
     static constexpr uint8_t const_large_file_pdu_size_bytes =
         const_pdu_size_bytes + sizeof(uint64_t);
 
-    [[nodiscard]] inline uint8_t getMaxFileSize() const
+    [[nodiscard]] inline uint8_t getSizeOfFileSize() const
     {
         return (largeFileFlag == LargeFileFlag::LargeFile) ? sizeof(uint64_t) : sizeof(uint32_t);
     }

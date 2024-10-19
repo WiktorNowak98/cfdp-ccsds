@@ -185,18 +185,18 @@ cfdp::pdu::directive::EndOfFile::EndOfFile(std::span<uint8_t const> memory,
 
     conditionCode = Condition((secondByte & eof_condition_code_bitmask) >> 4);
     checksum      = utils::bytesToInt<uint64_t>(memory, 2, sizeof(uint32_t));
-    fileSize      = utils::bytesToInt<uint64_t>(memory, 6, getMaxFileSize());
+    fileSize      = utils::bytesToInt<uint64_t>(memory, 6, getSizeOfFileSize());
 
     if (conditionCode != Condition::NoError)
     {
 
-        if (memory[6 + getMaxFileSize()] != utils::toUnderlying(TLVType::EntityId))
+        if (memory[6 + getSizeOfFileSize()] != utils::toUnderlying(TLVType::EntityId))
         {
             throw exception::DecodeFromBytesException("TLVType is not Enitity Id");
         }
         lengthOfEntityID = lengthOfEntityID;
         faultEntityID =
-            utils::bytesToInt<uint64_t>(memory, 6 + getMaxFileSize() + 1, lengthOfEntityID);
+            utils::bytesToInt<uint64_t>(memory, 6 + getSizeOfFileSize() + 1, lengthOfEntityID);
     }
 };
 
@@ -216,7 +216,7 @@ std::vector<uint8_t> cfdp::pdu::directive::EndOfFile::encodeToBytes() const
     auto checksumBytes = utils::intToBytes(checksum, sizeof(uint32_t));
     utils::concatenateVectorsInplace(checksumBytes, encodedPdu);
 
-    auto fileSizeBytes = utils::intToBytes(fileSize, getMaxFileSize());
+    auto fileSizeBytes = utils::intToBytes(fileSize, getSizeOfFileSize());
     utils::concatenateVectorsInplace(fileSizeBytes, encodedPdu);
 
     if (conditionCode != Condition::NoError)
