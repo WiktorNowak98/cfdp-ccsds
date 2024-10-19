@@ -71,21 +71,30 @@ class EndOfFile : PduInterface
               uint8_t lengthOfEntityID, uint64_t faultEntityID);
     EndOfFile(Condition conditionCode, uint32_t checksum, uint32_t fileSize);
     EndOfFile(Condition conditionCode, uint32_t checksum, uint64_t fileSize);
-    EndOfFile(std::span<uint8_t const> memory, LargeFileFlag largeFileFlag);
+    EndOfFile(std::span<uint8_t const> memory, LargeFileFlag largeFileFlag,
+              uint8_t lengthOfEntityID);
 
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
+
     [[nodiscard]] inline uint16_t getRawSize() const override
     {
-        return const_pdu_size_bytes + getFileSize() + getFaultLocationSize();
+        return const_pdu_size_bytes + getMaxFileSize() + getFaultLocationSize();
     };
+
+    [[nodiscard]] auto getLargeFileFlag() const { return largeFileFlag; }
+    [[nodiscard]] auto getConditionCode() const { return conditionCode; }
+    [[nodiscard]] auto getFileSize() const { return fileSize; }
+    [[nodiscard]] auto getChecksum() const { return checksum; }
+    [[nodiscard]] auto getLengthOfEntityID() const { return lengthOfEntityID; }
+    [[nodiscard]] auto getFaultEntityID() const { return faultEntityID; }
 
   private:
     LargeFileFlag largeFileFlag;
     Condition conditionCode;
     uint64_t fileSize;
     uint32_t checksum;
-    uint8_t lengthOfEntityID;
-    uint64_t faultEntityID;
+    uint8_t lengthOfEntityID = 0;
+    uint64_t faultEntityID   = 0;
 
     static constexpr uint8_t const_pdu_size_bytes =
         sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint32_t);
@@ -94,7 +103,7 @@ class EndOfFile : PduInterface
     static constexpr uint8_t const_large_file_pdu_size_bytes =
         const_pdu_size_bytes + sizeof(uint64_t);
 
-    [[nodiscard]] inline uint8_t getFileSize() const
+    [[nodiscard]] inline uint8_t getMaxFileSize() const
     {
         return (largeFileFlag == LargeFileFlag::LargeFile) ? sizeof(uint64_t) : sizeof(uint32_t);
     }

@@ -117,7 +117,7 @@ std::vector<uint8_t> cfdp::pdu::directive::AckPdu::encodeToBytes() const
 cfdp::pdu::directive::EndOfFile::EndOfFile(Condition conditionCode, uint32_t checksum,
                                            uint32_t fileSize)
     : conditionCode(conditionCode), checksum(checksum), fileSize(fileSize),
-      largeFileFlag(header::LargeFileFlag::SmallFile), lengthOfEntityID(0), faultEntityID(0)
+      largeFileFlag(header::LargeFileFlag::SmallFile)
 {
     if (conditionCode != Condition::NoError)
     {
@@ -129,7 +129,7 @@ cfdp::pdu::directive::EndOfFile::EndOfFile(Condition conditionCode, uint32_t che
 cfdp::pdu::directive::EndOfFile::EndOfFile(Condition conditionCode, uint32_t checksum,
                                            uint64_t fileSize)
     : conditionCode(conditionCode), checksum(checksum), fileSize(fileSize),
-      largeFileFlag(header::LargeFileFlag::LargeFile), lengthOfEntityID(0), faultEntityID(0)
+      largeFileFlag(header::LargeFileFlag::LargeFile)
 {
     if (conditionCode != Condition::NoError)
     {
@@ -167,13 +167,12 @@ cfdp::pdu::directive::EndOfFile::EndOfFile(Condition conditionCode, uint32_t che
 };
 
 cfdp::pdu::directive::EndOfFile::EndOfFile(std::span<uint8_t const> memory,
-                                           LargeFileFlag largeFileFlag)
-    : largeFileFlag(largeFileFlag)
+                                           LargeFileFlag largeFileFlag, uint8_t lengthOfEntityID)
+    : largeFileFlag(largeFileFlag), lengthOfEntityID(lengthOfEntityID)
 {
     const auto memory_size = memory.size();
 
-    if (memory_size < (largeFileFlag == LargeFileFlag::LargeFile) ? const_large_file_pdu_size_bytes
-                                                                  : const_small_file_pdu_size_bytes)
+    if (memory_size < const_small_file_pdu_size_bytes)
     {
         throw exception::DecodeFromBytesException("Passed memory does not contain enough bytes");
     }
@@ -186,17 +185,18 @@ cfdp::pdu::directive::EndOfFile::EndOfFile(std::span<uint8_t const> memory,
 
     conditionCode = Condition((secondByte & eof_condition_code_bitmask) >> 4);
     checksum      = utils::bytesToInt<uint64_t>(memory, 2, sizeof(uint32_t));
-    fileSize      = utils::bytesToInt<uint64_t>(memory, 6, getFileSize());
+    fileSize      = utils::bytesToInt<uint64_t>(memory, 6, getMaxFileSize());
 
-    if (conditionCode == Condition::NoError)
+    if (conditionCode != Condition::NoError)
     {
-        lengthOfEntityID = 0;
-        faultEntityID    = 0;
-    }
-    else
-    {
-        lengthOfEntityID = memory[8];
-        faultEntityID    = utils::bytesToInt<uint64_t>(memory, 9, lengthOfEntityID);
+
+        if (memory[6 + getMaxFileSize()] != utils::toUnderlying(TLVType::EntityId))
+        {
+            throw exception::DecodeFromBytesException("TLVType is not Enitity Id");
+        }
+        lengthOfEntityID = lengthOfEntityID;
+        faultEntityID =
+            utils::bytesToInt<uint64_t>(memory, 6 + getMaxFileSize() + 1, lengthOfEntityID);
     }
 };
 
@@ -216,16 +216,15 @@ std::vector<uint8_t> cfdp::pdu::directive::EndOfFile::encodeToBytes() const
     auto checksumBytes = utils::intToBytes(checksum, sizeof(uint32_t));
     utils::concatenateVectorsInplace(checksumBytes, encodedPdu);
 
-    auto fileSizeBytes = utils::intToBytes(fileSize, getFileSize());
+    auto fileSizeBytes = utils::intToBytes(fileSize, getMaxFileSize());
     utils::concatenateVectorsInplace(fileSizeBytes, encodedPdu);
 
     if (conditionCode != Condition::NoError)
     {
         encodedPdu.push_back(utils::toUnderlying(TLVType::EntityId));
-        encodedPdu.push_back(lengthOfEntityID);
 
         auto faultEntityIDBytes = utils::intToBytes(faultEntityID, lengthOfEntityID);
-        utils::concatenateVectorsInplace(fileSizeBytes, faultEntityIDBytes);
+        utils::concatenateVectorsInplace(faultEntityIDBytes, encodedPdu);
     }
 
     return encodedPdu;
