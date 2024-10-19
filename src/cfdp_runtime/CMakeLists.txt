@@ -13,6 +13,7 @@ target_include_directories(
     PUBLIC
     "${cfdp_SOURCE_DIR}/include/runtime"
 )
+target_compile_definitions(cfdp_core PUBLIC "${LOG_LEVEL}")
 target_compile_features(cfdp_runtime PUBLIC cxx_std_23)
 target_link_libraries(cfdp_runtime PRIVATE cfdp_core)
 

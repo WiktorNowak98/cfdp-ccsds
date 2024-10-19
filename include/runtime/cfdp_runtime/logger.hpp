@@ -17,16 +17,18 @@ enum class LogLevel : uint8_t
     Error,
 };
 
-#if defined(LOG_LEVEL_DEBUG)
+#if defined(CFDP_LOG_LEVEL_TRACE)
+constexpr LogLevel log_level_cutoff = LogLevel::Trace;
+#elif defined(CFDP_LOG_LEVEL_DEBUG)
 constexpr LogLevel log_level_cutoff = LogLevel::Debug;
-#elif defined(LOG_LEVEL_INFO)
+#elif defined(CFDP_LOG_LEVEL_INFO)
 constexpr LogLevel log_level_cutoff = LogLevel::Info;
-#elif defined(LOG_LEVEL_WARN)
+#elif defined(CFDP_LOG_LEVEL_WARN)
 constexpr LogLevel log_level_cutoff = LogLevel::Warn;
-#elif defined(LOG_LEVEL_ERROR)
+#elif defined(CFDP_LOG_LEVEL_ERROR)
 constexpr LogLevel log_level_cutoff = LogLevel::Error;
 #else
-constexpr LogLevel log_level_cutoff = LogLevel::Trace;
+constexpr LogLevel log_level_cutoff = LogLevel::Error;
 #endif
 
 class Logger
@@ -54,13 +56,12 @@ class Logger
 };
 
 template <class... Args>
-void log(LogLevel level, std::format_string<Args...> msg, Args&&... args) noexcept
+static void log(LogLevel level, std::format_string<Args...> msg, Args&&... args) noexcept
 {
     if (level < log_level_cutoff)
     {
         return;
     }
-
     auto log = std::vformat(msg.get(), std::make_format_args(args...));
 
     static auto logger = Logger{};
@@ -68,31 +69,31 @@ void log(LogLevel level, std::format_string<Args...> msg, Args&&... args) noexce
 }
 
 template <class... Args>
-void trace(std::format_string<Args...> msg, Args&&... args) noexcept
+static void trace(std::format_string<Args...> msg, Args&&... args) noexcept
 {
     log(LogLevel::Trace, msg, std::forward<Args>(args)...);
 }
 
 template <class... Args>
-void debug(std::format_string<Args...> msg, Args&&... args) noexcept
+static void debug(std::format_string<Args...> msg, Args&&... args) noexcept
 {
     log(LogLevel::Debug, msg, std::forward<Args>(args)...);
 }
 
 template <class... Args>
-void info(std::format_string<Args...> msg, Args&&... args) noexcept
+static void info(std::format_string<Args...> msg, Args&&... args) noexcept
 {
     log(LogLevel::Info, msg, std::forward<Args>(args)...);
 }
 
 template <class... Args>
-void warn(std::format_string<Args...> msg, Args&&... args) noexcept
+static void warn(std::format_string<Args...> msg, Args&&... args) noexcept
 {
     log(LogLevel::Warn, msg, std::forward<Args>(args)...);
 }
 
 template <class... Args>
-void error(std::format_string<Args...> msg, Args&&... args) noexcept
+static void error(std::format_string<Args...> msg, Args&&... args) noexcept
 {
     log(LogLevel::Error, msg, std::forward<Args>(args)...);
 }
