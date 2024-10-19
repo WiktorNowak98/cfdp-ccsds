@@ -9,12 +9,12 @@ using ::cfdp::pdu::header::LargeFileFlag;
 namespace cfdp::pdu::directive
 {
 
-class KeepAlivePdu : PduInterface
+class KeepAlive : PduInterface
 {
   public:
-    KeepAlivePdu(uint32_t progress) : progress(progress), largeFileFlag(LargeFileFlag::SmallFile){};
-    KeepAlivePdu(uint64_t progress) : progress(progress), largeFileFlag(LargeFileFlag::LargeFile){};
-    KeepAlivePdu(std::span<uint8_t const> memory);
+    KeepAlive(uint32_t progress) : progress(progress), largeFileFlag(LargeFileFlag::SmallFile){};
+    KeepAlive(uint64_t progress) : progress(progress), largeFileFlag(LargeFileFlag::LargeFile){};
+    KeepAlive(std::span<uint8_t const> memory);
 
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
 
@@ -40,11 +40,11 @@ class KeepAlivePdu : PduInterface
     }
 };
 
-class AckPdu : PduInterface
+class Ack : PduInterface
 {
   public:
-    AckPdu(Directive directiveCode, Condition conditionCode, TransactionStatus transactionStatus);
-    AckPdu(std::span<uint8_t const> memory);
+    Ack(Directive directiveCode, Condition conditionCode, TransactionStatus transactionStatus);
+    Ack(std::span<uint8_t const> memory);
 
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
     [[nodiscard]] inline uint16_t getRawSize() const override { return const_pdu_size_bytes; };

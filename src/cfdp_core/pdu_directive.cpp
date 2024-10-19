@@ -21,7 +21,7 @@ namespace header    = ::cfdp::pdu::header;
 namespace utils     = ::cfdp::utils;
 namespace exception = ::cfdp::pdu::exception;
 
-cfdp::pdu::directive::KeepAlivePdu::KeepAlivePdu(std::span<uint8_t const> memory)
+cfdp::pdu::directive::KeepAlive::KeepAlive(std::span<uint8_t const> memory)
 {
     const auto memory_size = memory.size();
 
@@ -40,7 +40,7 @@ cfdp::pdu::directive::KeepAlivePdu::KeepAlivePdu(std::span<uint8_t const> memory
     progress      = utils::bytesToInt<uint64_t>(memory, 1, getProgressSize());
 };
 
-std::vector<uint8_t> cfdp::pdu::directive::KeepAlivePdu::encodeToBytes() const
+std::vector<uint8_t> cfdp::pdu::directive::KeepAlive::encodeToBytes() const
 {
     const auto pdu_size = getRawSize();
     auto encodedPdu     = std::vector<uint8_t>{};
@@ -55,8 +55,8 @@ std::vector<uint8_t> cfdp::pdu::directive::KeepAlivePdu::encodeToBytes() const
     return encodedPdu;
 }
 
-cfdp::pdu::directive::AckPdu::AckPdu(Directive directiveCode, Condition conditionCode,
-                                     TransactionStatus transactionStatus)
+cfdp::pdu::directive::Ack::Ack(Directive directiveCode, Condition conditionCode,
+                               TransactionStatus transactionStatus)
     : directiveCode(directiveCode), conditionCode(conditionCode),
       transactionStatus(transactionStatus)
 {
@@ -69,7 +69,7 @@ cfdp::pdu::directive::AckPdu::AckPdu(Directive directiveCode, Condition conditio
         (directiveCode == Directive::Eof) ? DirectiveSubtype::Eof : DirectiveSubtype::Finished;
 }
 
-cfdp::pdu::directive::AckPdu::AckPdu(std::span<uint8_t const> memory)
+cfdp::pdu::directive::Ack::Ack(std::span<uint8_t const> memory)
 {
     if (memory.size() != const_pdu_size_bytes)
     {
@@ -92,7 +92,7 @@ cfdp::pdu::directive::AckPdu::AckPdu(std::span<uint8_t const> memory)
     transactionStatus = TransactionStatus((thirdByte & ack_transaction_status_bitmask));
 }
 
-std::vector<uint8_t> cfdp::pdu::directive::AckPdu::encodeToBytes() const
+std::vector<uint8_t> cfdp::pdu::directive::Ack::encodeToBytes() const
 {
     const auto pdu_size = getRawSize();
     auto encodedPdu     = std::vector<uint8_t>{};
