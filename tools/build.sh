@@ -8,6 +8,7 @@ clean_run=false
 compile_tests=false
 shared_lib_option="OFF"
 cxx_compiler="g++"
+log_level_definition="CFDP_LOG_LEVEL_TRACE"
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -27,6 +28,11 @@ while [[ $# -gt 0 ]]; do
 		shared_lib_option="ON"
 		shift
 		;;
+	--log-level)
+		shift
+		log_level_definition=$1
+		shift
+		;;
 	*)
 		echo "Unknown option $1"
 		exit 1
@@ -42,15 +48,17 @@ echo "C++ Compiler        = ${cxx_compiler}"
 echo "Clean Run           = ${clean_run}"
 echo "Compile Tests       = ${compile_tests}"
 echo "Compile Shared Lib  = ${shared_lib_option}"
+echo "Log Level           = ${log_level_definition}"
 echo
 
-cmake -G Ninja -D CMAKE_CXX_COMPILER="${cxx_compiler}" -D BUILD_SHARED_LIBS="${shared_lib_option}" -D COMPILE_TESTS="${compile_tests}" -S "${repo_root}" -B build
-
-if [ ! -f "${build_dir}/CMakeCache.txt" ]; then
-	echo -e "\nBuild directory or CMakeCache.txt does not exist."
-	echo "Please run the script with --configure option first."
-	exit 1
-fi
+cmake \
+	-G Ninja \
+	-D CMAKE_CXX_COMPILER="${cxx_compiler}" \
+	-D BUILD_SHARED_LIBS="${shared_lib_option}" \
+	-D COMPILE_TESTS="${compile_tests}" \
+	-D LOG_LEVEL="${log_level_definition}" \
+	-S "${repo_root}" \
+	-B build
 
 if [ "${clean_run}" = true ]; then
 	echo -e "\nClearing the cache for fresh build...\n"
