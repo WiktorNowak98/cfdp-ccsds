@@ -47,7 +47,7 @@ class Logger
     // We need this mutex to be static, our entrypoint logging functions
     // use templates and each specialization has its own static logger
     // object. This way we will avoid log races.
-    static inline std::mutex mutex{};
+    static inline std::mutex mutex{}; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
     [[nodiscard]] inline std::thread::id getThreadID() const noexcept
     {
