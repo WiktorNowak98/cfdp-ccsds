@@ -167,9 +167,9 @@ cfdp::pdu::directive::EndOfFile<T>::EndOfFile(std::span<uint8_t const> memory,
         return;
     }
 
-    if (memory_size < const_pdu_size_bytes + getFaultLocationSize())
+    if (memory_size != const_pdu_size_bytes + getFaultLocationSize())
     {
-        throw exception::DecodeFromBytesException("Passed memory does not contain enough bytes");
+        throw exception::DecodeFromBytesException("Passed memory has invalid size");
     }
 
     const auto fault_location_position = 6 + getSizeOfFileSize();
