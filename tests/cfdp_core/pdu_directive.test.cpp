@@ -39,12 +39,12 @@ class EndOfFileTest : public testing::Test
   protected:
     static constexpr std::array<uint8_t, 10> encoded_small_no_error_frame = {
         4, 0, 66, 58, 53, 199, 255, 255, 255, 255};
-    static constexpr std::array<uint8_t, 13> encoded_small_with_error_frame = {
-        4, 96, 66, 58, 53, 199, 255, 255, 255, 255, 6, 48, 57};
+    static constexpr std::array<uint8_t, 14> encoded_small_with_error_frame = {
+        4, 96, 66, 58, 53, 199, 255, 255, 255, 255, 6, 2, 48, 57};
     static constexpr std::array<uint8_t, 14> encoded_large_no_error_frame = {
         4, 0, 66, 58, 53, 199, 255, 255, 255, 255, 255, 255, 255, 255};
-    static constexpr std::array<uint8_t, 17> encoded_large_with_error_frame = {
-        4, 96, 66, 58, 53, 199, 255, 255, 255, 255, 255, 255, 255, 255, 6, 48, 57};
+    static constexpr std::array<uint8_t, 18> encoded_large_with_error_frame = {
+        4, 96, 66, 58, 53, 199, 255, 255, 255, 255, 255, 255, 255, 255, 6, 2, 48, 57};
     ;
 };
 
@@ -242,7 +242,7 @@ TEST_F(EndOfFileTest, TestDecodingSmallFileWithNoError)
     auto encoded = std::span<uint8_t const>{encoded_small_no_error_frame.begin(),
                                             encoded_small_no_error_frame.end()};
 
-    auto pdu = EndOfFile<uint32_t>(encoded, 0);
+    auto pdu = EndOfFile<uint32_t>(encoded);
 
     ASSERT_EQ(pdu.getConditionCode(), Condition::NoError);
     ASSERT_EQ(pdu.getFileSize(), UINT32_MAX);
@@ -256,7 +256,7 @@ TEST_F(EndOfFileTest, TestDecodingLargeFileWithNoError)
     auto encoded = std::span<uint8_t const>{encoded_large_no_error_frame.begin(),
                                             encoded_large_no_error_frame.end()};
 
-    auto pdu = EndOfFile<uint64_t>(encoded, 0);
+    auto pdu = EndOfFile<uint64_t>(encoded);
 
     ASSERT_EQ(pdu.getConditionCode(), Condition::NoError);
     ASSERT_EQ(pdu.getFileSize(), UINT64_MAX);
@@ -270,19 +270,19 @@ TEST_F(EndOfFileTest, TestDecodingSmallFileWithError)
     auto encoded = std::span<uint8_t const>{encoded_small_with_error_frame.begin(),
                                             encoded_small_with_error_frame.end()};
 
-    auto pdu = EndOfFile<uint32_t>(encoded, 2);
+    auto pdu = EndOfFile<uint32_t>(encoded);
 
     ASSERT_EQ(pdu.getConditionCode(), Condition::FileSizeError);
     ASSERT_EQ(pdu.getLengthOfEntityID(), 2);
     ASSERT_EQ(pdu.getFaultEntityID(), 12345);
 }
 
-TEST_F(EndOfFileTest, TestDecodinglargeFileWithError)
+TEST_F(EndOfFileTest, TestDecodingLargeFileWithError)
 {
     auto encoded = std::span<uint8_t const>{encoded_large_with_error_frame.begin(),
                                             encoded_large_with_error_frame.end()};
 
-    auto pdu = EndOfFile<uint64_t>(encoded, 2);
+    auto pdu = EndOfFile<uint64_t>(encoded);
 
     ASSERT_EQ(pdu.getConditionCode(), Condition::FileSizeError);
     ASSERT_EQ(pdu.getLengthOfEntityID(), 2);
@@ -294,13 +294,14 @@ TEST_F(EndOfFileTest, TestDecodingWrongByteStreamSize)
     auto encoded = std::span<uint8_t const>{encoded_small_no_error_frame.begin(),
                                             encoded_small_no_error_frame.end() - 1};
 
-    ASSERT_THROW(EndOfFile<uint32_t>(encoded, 0), DecodeFromBytesException);
+    ASSERT_THROW(EndOfFile<uint32_t>{encoded}, DecodeFromBytesException);
 }
 
 TEST_F(EndOfFileTest, TestDecodingWrongTLVType)
 {
-    std::array<uint8_t, 13> encoded_frame = {4, 96, 66, 58, 53, 199, 255, 255, 255, 255, 5, 48, 57};
+    std::array<uint8_t, 14> encoded_frame = {4,   96,  66,  58, 53, 199, 255,
+                                             255, 255, 255, 5,  2,  48,  57};
     auto encoded = std::span<uint8_t const>{encoded_frame.begin(), encoded_frame.end()};
 
-    ASSERT_THROW(EndOfFile<uint32_t>(encoded, 0), DecodeFromBytesException);
+    ASSERT_THROW(EndOfFile<uint32_t>{encoded}, DecodeFromBytesException);
 }

@@ -141,9 +141,7 @@ cfdp::pdu::directive::EndOfFile<T>::EndOfFile(Condition conditionCode, uint32_t 
 };
 
 template <class T>
-cfdp::pdu::directive::EndOfFile<T>::EndOfFile(std::span<uint8_t const> memory,
-                                              uint8_t lengthOfEntityID)
-    : lengthOfEntityID(lengthOfEntityID)
+cfdp::pdu::directive::EndOfFile<T>::EndOfFile(std::span<uint8_t const> memory)
 {
     const auto memory_size = memory.size();
 
@@ -167,9 +165,9 @@ cfdp::pdu::directive::EndOfFile<T>::EndOfFile(std::span<uint8_t const> memory,
         return;
     }
 
-    if (memory_size != const_pdu_size_bytes + getFaultLocationSize())
+    if (memory_size < const_pdu_size_bytes + getFaultLocationSize())
     {
-        throw exception::DecodeFromBytesException("Passed memory has invalid size");
+        throw exception::DecodeFromBytesException("Passed memory does not contain enough bytes");
     }
 
     const auto fault_location_position = 6 + getSizeOfFileSize();
@@ -178,8 +176,9 @@ cfdp::pdu::directive::EndOfFile<T>::EndOfFile(std::span<uint8_t const> memory,
     {
         throw exception::DecodeFromBytesException("TLVType is not Enitity Id");
     }
+    lengthOfEntityID = memory[fault_location_position + 1];
     faultEntityID =
-        utils::bytesToInt<uint64_t>(memory, fault_location_position + 1, lengthOfEntityID);
+        utils::bytesToInt<uint64_t>(memory, fault_location_position + 2, lengthOfEntityID);
 };
 
 template <class T>
@@ -208,6 +207,7 @@ std::vector<uint8_t> cfdp::pdu::directive::EndOfFile<T>::encodeToBytes() const
     }
 
     encodedPdu.push_back(utils::toUnderlying(TLVType::EntityId));
+    encodedPdu.push_back(lengthOfEntityID);
 
     auto faultEntityIDBytes = utils::intToBytes(faultEntityID, lengthOfEntityID);
     utils::concatenateVectorsInplace(faultEntityIDBytes, encodedPdu);

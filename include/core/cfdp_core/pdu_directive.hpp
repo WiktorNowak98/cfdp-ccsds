@@ -69,7 +69,7 @@ class EndOfFile : PduInterface
     EndOfFile(Condition conditionCode, uint32_t checksum, T fileSize, uint8_t lengthOfEntityID,
               uint64_t faultEntityID);
     EndOfFile(Condition conditionCode, uint32_t checksum, T fileSize);
-    EndOfFile(std::span<uint8_t const> memory, uint8_t lengthOfEntityID);
+    EndOfFile(std::span<uint8_t const> memory);
 
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
 
@@ -98,7 +98,7 @@ class EndOfFile : PduInterface
     [[nodiscard]] inline uint8_t getSizeOfFileSize() const { return sizeof(fileSize); }
     [[nodiscard]] inline uint8_t getFaultLocationSize() const
     {
-        return (isError()) ? sizeof(uint8_t) + lengthOfEntityID : 0;
+        return (isError()) ? sizeof(uint8_t) + sizeof(uint8_t) + lengthOfEntityID : 0;
     }
 };
 
