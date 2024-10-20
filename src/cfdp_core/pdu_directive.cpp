@@ -114,65 +114,40 @@ std::vector<uint8_t> cfdp::pdu::directive::Ack::encodeToBytes() const
     return encodedPdu;
 }
 
-cfdp::pdu::directive::EndOfFile::EndOfFile(Condition conditionCode, uint32_t checksum,
-                                           uint32_t fileSize)
-    : conditionCode(conditionCode), checksum(checksum), fileSize(fileSize),
-      largeFileFlag(header::LargeFileFlag::SmallFile)
+template <class T>
+cfdp::pdu::directive::EndOfFile<T>::EndOfFile(Condition conditionCode, uint32_t checksum,
+                                              T fileSize)
+    : conditionCode(conditionCode), checksum(checksum), fileSize(fileSize)
 {
-    if (conditionCode != Condition::NoError)
+    if (isError())
     {
         throw exception::PduConstructionException(
             "Fault location cannot be omitted with `No error` condition code");
     }
 };
 
-cfdp::pdu::directive::EndOfFile::EndOfFile(Condition conditionCode, uint32_t checksum,
-                                           uint64_t fileSize)
+template <class T>
+cfdp::pdu::directive::EndOfFile<T>::EndOfFile(Condition conditionCode, uint32_t checksum,
+                                              T fileSize, uint8_t lengthOfEntityID,
+                                              uint64_t faultEntityID)
     : conditionCode(conditionCode), checksum(checksum), fileSize(fileSize),
-      largeFileFlag(header::LargeFileFlag::LargeFile)
+      lengthOfEntityID(lengthOfEntityID), faultEntityID(faultEntityID)
 {
-    if (conditionCode != Condition::NoError)
-    {
-        throw exception::PduConstructionException(
-            "Fault location cannot be omitted with `No error` condition code");
-    }
-};
-
-cfdp::pdu::directive::EndOfFile::EndOfFile(Condition conditionCode, uint32_t checksum,
-                                           uint32_t fileSize, uint8_t lengthOfEntityID,
-                                           uint64_t faultEntityID)
-    : conditionCode(conditionCode), checksum(checksum), fileSize(fileSize),
-      largeFileFlag(header::LargeFileFlag::SmallFile), lengthOfEntityID(lengthOfEntityID),
-      faultEntityID(faultEntityID)
-{
-    if (conditionCode == Condition::NoError)
+    if (not isError())
     {
         throw exception::PduConstructionException(
             "Fault location should be omitted with `No error` condition code");
     }
 };
 
-cfdp::pdu::directive::EndOfFile::EndOfFile(Condition conditionCode, uint32_t checksum,
-                                           uint64_t fileSize, uint8_t lengthOfEntityID,
-                                           uint64_t faultEntityID)
-    : conditionCode(conditionCode), checksum(checksum), fileSize(fileSize),
-      largeFileFlag(header::LargeFileFlag::LargeFile), lengthOfEntityID(lengthOfEntityID),
-      faultEntityID(faultEntityID)
-{
-    if (conditionCode == Condition::NoError)
-    {
-        throw exception::PduConstructionException(
-            "Fault location should be omitted with `No error` condition code");
-    }
-};
-
-cfdp::pdu::directive::EndOfFile::EndOfFile(std::span<uint8_t const> memory,
-                                           LargeFileFlag largeFileFlag, uint8_t lengthOfEntityID)
-    : largeFileFlag(largeFileFlag), lengthOfEntityID(lengthOfEntityID)
+template <class T>
+cfdp::pdu::directive::EndOfFile<T>::EndOfFile(std::span<uint8_t const> memory,
+                                              uint8_t lengthOfEntityID)
+    : lengthOfEntityID(lengthOfEntityID)
 {
     const auto memory_size = memory.size();
 
-    if (memory_size < const_small_file_pdu_size_bytes)
+    if (memory_size < const_pdu_size_bytes)
     {
         throw exception::DecodeFromBytesException("Passed memory does not contain enough bytes");
     }
@@ -187,20 +162,28 @@ cfdp::pdu::directive::EndOfFile::EndOfFile(std::span<uint8_t const> memory,
     checksum      = utils::bytesToInt<uint64_t>(memory, 2, sizeof(uint32_t));
     fileSize      = utils::bytesToInt<uint64_t>(memory, 6, getSizeOfFileSize());
 
-    if (conditionCode != Condition::NoError)
+    if (not isError())
     {
-
-        if (memory[6 + getSizeOfFileSize()] != utils::toUnderlying(TLVType::EntityId))
-        {
-            throw exception::DecodeFromBytesException("TLVType is not Enitity Id");
-        }
-        lengthOfEntityID = lengthOfEntityID;
-        faultEntityID =
-            utils::bytesToInt<uint64_t>(memory, 6 + getSizeOfFileSize() + 1, lengthOfEntityID);
+        return;
     }
+
+    if (memory_size < const_pdu_size_bytes + getFaultLocationSize())
+    {
+        throw exception::DecodeFromBytesException("Passed memory does not contain enough bytes");
+    }
+
+    const auto fault_location_position = 6 + getSizeOfFileSize();
+
+    if (memory[fault_location_position] != utils::toUnderlying(TLVType::EntityId))
+    {
+        throw exception::DecodeFromBytesException("TLVType is not Enitity Id");
+    }
+    faultEntityID =
+        utils::bytesToInt<uint64_t>(memory, fault_location_position + 1, lengthOfEntityID);
 };
 
-std::vector<uint8_t> cfdp::pdu::directive::EndOfFile::encodeToBytes() const
+template <class T>
+std::vector<uint8_t> cfdp::pdu::directive::EndOfFile<T>::encodeToBytes() const
 {
     const auto pdu_size = getRawSize();
     auto encodedPdu     = std::vector<uint8_t>{};
@@ -219,13 +202,18 @@ std::vector<uint8_t> cfdp::pdu::directive::EndOfFile::encodeToBytes() const
     auto fileSizeBytes = utils::intToBytes(fileSize, getSizeOfFileSize());
     utils::concatenateVectorsInplace(fileSizeBytes, encodedPdu);
 
-    if (conditionCode != Condition::NoError)
+    if (not isError())
     {
-        encodedPdu.push_back(utils::toUnderlying(TLVType::EntityId));
-
-        auto faultEntityIDBytes = utils::intToBytes(faultEntityID, lengthOfEntityID);
-        utils::concatenateVectorsInplace(faultEntityIDBytes, encodedPdu);
+        return encodedPdu;
     }
+
+    encodedPdu.push_back(utils::toUnderlying(TLVType::EntityId));
+
+    auto faultEntityIDBytes = utils::intToBytes(faultEntityID, lengthOfEntityID);
+    utils::concatenateVectorsInplace(faultEntityIDBytes, encodedPdu);
 
     return encodedPdu;
 }
+
+template class cfdp::pdu::directive::EndOfFile<uint32_t>;
+template class cfdp::pdu::directive::EndOfFile<uint64_t>;

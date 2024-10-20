@@ -62,17 +62,14 @@ class Ack : PduInterface
     static constexpr uint16_t const_pdu_size_bytes = sizeof(uint8_t) + sizeof(uint16_t);
 };
 
+template <class T>
 class EndOfFile : PduInterface
 {
   public:
-    EndOfFile(Condition conditionCode, uint32_t checksum, uint32_t fileSize,
-              uint8_t lengthOfEntityID, uint64_t faultEntityID);
-    EndOfFile(Condition conditionCode, uint32_t checksum, uint64_t fileSize,
-              uint8_t lengthOfEntityID, uint64_t faultEntityID);
-    EndOfFile(Condition conditionCode, uint32_t checksum, uint32_t fileSize);
-    EndOfFile(Condition conditionCode, uint32_t checksum, uint64_t fileSize);
-    EndOfFile(std::span<uint8_t const> memory, LargeFileFlag largeFileFlag,
-              uint8_t lengthOfEntityID);
+    EndOfFile(Condition conditionCode, uint32_t checksum, T fileSize, uint8_t lengthOfEntityID,
+              uint64_t faultEntityID);
+    EndOfFile(Condition conditionCode, uint32_t checksum, T fileSize);
+    EndOfFile(std::span<uint8_t const> memory, uint8_t lengthOfEntityID);
 
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
 
@@ -81,7 +78,6 @@ class EndOfFile : PduInterface
         return const_pdu_size_bytes + getSizeOfFileSize() + getFaultLocationSize();
     };
 
-    [[nodiscard]] auto getLargeFileFlag() const { return largeFileFlag; }
     [[nodiscard]] auto getConditionCode() const { return conditionCode; }
     [[nodiscard]] auto getFileSize() const { return fileSize; }
     [[nodiscard]] auto getChecksum() const { return checksum; }
@@ -89,28 +85,20 @@ class EndOfFile : PduInterface
     [[nodiscard]] auto getFaultEntityID() const { return faultEntityID; }
 
   private:
-    LargeFileFlag largeFileFlag;
+    T fileSize;
     Condition conditionCode;
-    uint64_t fileSize;
     uint32_t checksum;
     uint8_t lengthOfEntityID = 0;
     uint64_t faultEntityID   = 0;
 
     static constexpr uint8_t const_pdu_size_bytes =
-        sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint32_t);
-    static constexpr uint8_t const_small_file_pdu_size_bytes =
-        const_pdu_size_bytes + sizeof(uint32_t);
-    static constexpr uint8_t const_large_file_pdu_size_bytes =
-        const_pdu_size_bytes + sizeof(uint64_t);
+        sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(fileSize);
 
-    [[nodiscard]] inline uint8_t getSizeOfFileSize() const
-    {
-        return (largeFileFlag == LargeFileFlag::LargeFile) ? sizeof(uint64_t) : sizeof(uint32_t);
-    }
-
+    [[nodiscard]] inline bool isError() const { return conditionCode != Condition::NoError; }
+    [[nodiscard]] inline uint8_t getSizeOfFileSize() const { return sizeof(fileSize); }
     [[nodiscard]] inline uint8_t getFaultLocationSize() const
     {
-        return (conditionCode != Condition::NoError) ? sizeof(uint8_t) + lengthOfEntityID : 0;
+        return (isError()) ? sizeof(uint8_t) + lengthOfEntityID : 0;
     }
 };
 
