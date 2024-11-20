@@ -79,20 +79,20 @@ TEST_F(PduHeaderTest, TestHeaderDecoding)
 
     auto header = PduHeader(encodedHeaderView);
 
-    ASSERT_EQ(header.getVersion(), 1);
-    ASSERT_EQ(header.getPduType(), PduType::FileData);
-    ASSERT_EQ(header.getDirection(), Direction::TowardsReceiver);
-    ASSERT_EQ(header.getTransmissionMode(), TransmissionMode::Acknowledged);
-    ASSERT_EQ(header.getCrcFlag(), CrcFlag::CrcPresent);
-    ASSERT_EQ(header.getLargeFileFlag(), LargeFileFlag::LargeFile);
-    ASSERT_EQ(header.getPduDataFieldLength(), 500);
-    ASSERT_EQ(header.getSegmentationControl(), SegmentationControl::BoundariesNotPreserved);
-    ASSERT_EQ(header.getLengthOfEntityIDs(), 1);
-    ASSERT_EQ(header.getSegmentMetadataFlag(), SegmentMetadataFlag::NotPresent);
-    ASSERT_EQ(header.getLengthOfTransaction(), 5);
-    ASSERT_EQ(header.getSourceEntityID(), 1);
-    ASSERT_EQ(header.getTransactionNumber(), 1430);
-    ASSERT_EQ(header.getDestinationEntityID(), 2);
+    ASSERT_EQ(header.version, 1);
+    ASSERT_EQ(header.pduType, PduType::FileData);
+    ASSERT_EQ(header.direction, Direction::TowardsReceiver);
+    ASSERT_EQ(header.transmissionMode, TransmissionMode::Acknowledged);
+    ASSERT_EQ(header.crcFlag, CrcFlag::CrcPresent);
+    ASSERT_EQ(header.largeFileFlag, LargeFileFlag::LargeFile);
+    ASSERT_EQ(header.pduDataFieldLength, 500);
+    ASSERT_EQ(header.segmentationControl, SegmentationControl::BoundariesNotPreserved);
+    ASSERT_EQ(header.lengthOfEntityIDs, 1);
+    ASSERT_EQ(header.segmentMetadataFlag, SegmentMetadataFlag::NotPresent);
+    ASSERT_EQ(header.lengthOfTransaction, 5);
+    ASSERT_EQ(header.sourceEntityID, 1);
+    ASSERT_EQ(header.transactionSequenceNumber, 1430);
+    ASSERT_EQ(header.destinationEntityID, 2);
 }
 
 TEST_F(PduHeaderTest, TestHeaderDecodingTooShortByteStream)

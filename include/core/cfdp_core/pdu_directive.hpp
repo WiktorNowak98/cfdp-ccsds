@@ -23,13 +23,10 @@ class KeepAlive : PduInterface
                                                            : const_small_file_size_bytes;
     };
 
-    [[nodiscard]] auto getProgress() const { return progress; }
-    [[nodiscard]] auto getLargeFileFlag() const { return largeFileFlag; }
-
-  private:
     uint64_t progress;
     LargeFileFlag largeFileFlag;
 
+  private:
     static constexpr uint16_t const_small_file_size_bytes = sizeof(uint8_t) + sizeof(uint32_t);
     static constexpr uint16_t const_large_file_size_bytes = sizeof(uint8_t) + sizeof(uint64_t);
 
@@ -48,16 +45,12 @@ class Ack : PduInterface
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
     [[nodiscard]] inline uint16_t getRawSize() const override { return const_pdu_size_bytes; };
 
-    [[nodiscard]] auto getDirectiveCode() const { return directiveCode; }
-    [[nodiscard]] auto getConditionCode() const { return conditionCode; }
-    [[nodiscard]] auto getTransactionStatus() const { return transactionStatus; }
-
-  private:
     Directive directiveCode;
     DirectiveSubtype directiveSubtype;
     Condition conditionCode;
     TransactionStatus transactionStatus;
 
+  private:
     static constexpr uint16_t const_pdu_size_bytes = sizeof(uint8_t) + sizeof(uint16_t);
 };
 
@@ -77,13 +70,6 @@ class EndOfFile : PduInterface
         return const_pdu_size_bytes + getSizeOfFileSize() + getFaultLocationSize();
     };
 
-    [[nodiscard]] auto getConditionCode() const { return conditionCode; }
-    [[nodiscard]] auto getFileSize() const { return fileSize; }
-    [[nodiscard]] auto getChecksum() const { return checksum; }
-    [[nodiscard]] auto getLengthOfEntityID() const { return lengthOfEntityID; }
-    [[nodiscard]] auto getFaultEntityID() const { return faultEntityID; }
-
-  private:
     uint64_t fileSize;
     LargeFileFlag largeFileFlag;
     Condition conditionCode;
@@ -91,10 +77,12 @@ class EndOfFile : PduInterface
     uint8_t lengthOfEntityID = 0;
     uint64_t faultEntityID   = 0;
 
+  private:
     static constexpr uint8_t const_pdu_size_bytes =
         sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint32_t);
 
     [[nodiscard]] inline bool isError() const { return conditionCode != Condition::NoError; }
+
     [[nodiscard]] inline uint8_t getSizeOfFileSize() const
     {
         return (largeFileFlag == LargeFileFlag::LargeFile) ? sizeof(uint64_t) : sizeof(uint32_t);
@@ -105,5 +93,4 @@ class EndOfFile : PduInterface
         return (isError()) ? sizeof(uint8_t) + sizeof(uint8_t) + lengthOfEntityID : 0;
     }
 };
-
 } // namespace cfdp::pdu::directive

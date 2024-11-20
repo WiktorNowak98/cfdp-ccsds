@@ -1,5 +1,3 @@
-#include "gtest/gtest.h"
-#include <functional>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -8,6 +6,7 @@
 #include <cfdp_core/pdu_exceptions.hpp>
 
 #include <cstdint>
+#include <functional>
 #include <span>
 #include <tuple>
 
@@ -93,7 +92,7 @@ TEST_F(KeepAliveTest, TestEncodingSmallFile)
     auto pdu     = KeepAlive(UINT32_MAX, LargeFileFlag::SmallFile);
     auto encoded = pdu.encodeToBytes();
 
-    ASSERT_EQ(pdu.getLargeFileFlag(), LargeFileFlag::SmallFile);
+    ASSERT_EQ(pdu.largeFileFlag, LargeFileFlag::SmallFile);
     ASSERT_EQ(pdu.getRawSize(), sizeof(uint8_t) + sizeof(uint32_t));
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_small_frame));
 }
@@ -103,7 +102,7 @@ TEST_F(KeepAliveTest, TestEncodingLargeFile)
     auto pdu     = KeepAlive(UINT64_MAX, LargeFileFlag::LargeFile);
     auto encoded = pdu.encodeToBytes();
 
-    ASSERT_EQ(pdu.getLargeFileFlag(), LargeFileFlag::LargeFile);
+    ASSERT_EQ(pdu.largeFileFlag, LargeFileFlag::LargeFile);
     ASSERT_EQ(pdu.getRawSize(), sizeof(uint8_t) + sizeof(uint64_t));
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_large_frame));
 }
@@ -118,8 +117,8 @@ TEST_F(KeepAliveTest, TestDecodingSmallFile)
 
     auto pdu = KeepAlive(encoded);
 
-    ASSERT_EQ(pdu.getLargeFileFlag(), LargeFileFlag::SmallFile);
-    ASSERT_EQ(pdu.getProgress(), UINT32_MAX);
+    ASSERT_EQ(pdu.largeFileFlag, LargeFileFlag::SmallFile);
+    ASSERT_EQ(pdu.progress, UINT32_MAX);
 }
 
 TEST_F(KeepAliveTest, TestDecodingLargeFile)
@@ -128,8 +127,8 @@ TEST_F(KeepAliveTest, TestDecodingLargeFile)
 
     auto pdu = KeepAlive(encoded);
 
-    ASSERT_EQ(pdu.getLargeFileFlag(), LargeFileFlag::LargeFile);
-    ASSERT_EQ(pdu.getProgress(), UINT64_MAX);
+    ASSERT_EQ(pdu.largeFileFlag, LargeFileFlag::LargeFile);
+    ASSERT_EQ(pdu.progress, UINT64_MAX);
 }
 
 TEST_F(KeepAliveTest, TestDecodingTooShortByteStream)
@@ -161,9 +160,9 @@ TEST_F(AckTest, TestEncodingEofAck)
     auto pdu = Ack(Directive::Eof, Condition::KeepAliveLimitReached, TransactionStatus::Terminated);
     auto encoded = pdu.encodeToBytes();
 
-    ASSERT_EQ(pdu.getDirectiveCode(), Directive::Eof);
-    ASSERT_EQ(pdu.getConditionCode(), Condition::KeepAliveLimitReached);
-    ASSERT_EQ(pdu.getTransactionStatus(), TransactionStatus::Terminated);
+    ASSERT_EQ(pdu.directiveCode, Directive::Eof);
+    ASSERT_EQ(pdu.conditionCode, Condition::KeepAliveLimitReached);
+    ASSERT_EQ(pdu.transactionStatus, TransactionStatus::Terminated);
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_eof_ack_frame));
 }
@@ -174,9 +173,9 @@ TEST_F(AckTest, TestEncodingFinishedAck)
         Ack(Directive::Finished, Condition::KeepAliveLimitReached, TransactionStatus::Terminated);
     auto encoded = pdu.encodeToBytes();
 
-    ASSERT_EQ(pdu.getDirectiveCode(), Directive::Finished);
-    ASSERT_EQ(pdu.getConditionCode(), Condition::KeepAliveLimitReached);
-    ASSERT_EQ(pdu.getTransactionStatus(), TransactionStatus::Terminated);
+    ASSERT_EQ(pdu.directiveCode, Directive::Finished);
+    ASSERT_EQ(pdu.conditionCode, Condition::KeepAliveLimitReached);
+    ASSERT_EQ(pdu.transactionStatus, TransactionStatus::Terminated);
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_finished_ack_frame));
 }
@@ -188,9 +187,9 @@ TEST_F(AckTest, TestDecodingEofAck)
 
     auto pdu = Ack(encoded);
 
-    ASSERT_EQ(pdu.getDirectiveCode(), Directive::Eof);
-    ASSERT_EQ(pdu.getConditionCode(), Condition::KeepAliveLimitReached);
-    ASSERT_EQ(pdu.getTransactionStatus(), TransactionStatus::Terminated);
+    ASSERT_EQ(pdu.directiveCode, Directive::Eof);
+    ASSERT_EQ(pdu.conditionCode, Condition::KeepAliveLimitReached);
+    ASSERT_EQ(pdu.transactionStatus, TransactionStatus::Terminated);
 }
 
 TEST_F(AckTest, TestDecodingFinishedAck)
@@ -200,9 +199,9 @@ TEST_F(AckTest, TestDecodingFinishedAck)
 
     auto pdu = Ack(encoded);
 
-    ASSERT_EQ(pdu.getDirectiveCode(), Directive::Finished);
-    ASSERT_EQ(pdu.getConditionCode(), Condition::KeepAliveLimitReached);
-    ASSERT_EQ(pdu.getTransactionStatus(), TransactionStatus::Terminated);
+    ASSERT_EQ(pdu.directiveCode, Directive::Finished);
+    ASSERT_EQ(pdu.conditionCode, Condition::KeepAliveLimitReached);
+    ASSERT_EQ(pdu.transactionStatus, TransactionStatus::Terminated);
 }
 
 TEST_F(AckTest, TestDecodingWrongByteStreamSize)
@@ -245,11 +244,11 @@ TEST_F(EndOfFileTest, TestEncodingSmallFileWithoutError)
     auto pdu     = buildNoErrorPdu(Condition::NoError, UINT32_MAX, LargeFileFlag::SmallFile);
     auto encoded = pdu->encodeToBytes();
 
-    ASSERT_EQ(pdu->getConditionCode(), Condition::NoError);
-    ASSERT_EQ(pdu->getFileSize(), UINT32_MAX);
-    ASSERT_EQ(pdu->getChecksum(), 1111111111);
-    ASSERT_EQ(pdu->getLengthOfEntityID(), 0);
-    ASSERT_EQ(pdu->getFaultEntityID(), 0);
+    ASSERT_EQ(pdu->conditionCode, Condition::NoError);
+    ASSERT_EQ(pdu->fileSize, UINT32_MAX);
+    ASSERT_EQ(pdu->checksum, 1111111111);
+    ASSERT_EQ(pdu->lengthOfEntityID, 0);
+    ASSERT_EQ(pdu->faultEntityID, 0);
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_small_no_error_frame));
 }
@@ -259,11 +258,11 @@ TEST_F(EndOfFileTest, TestEncodingLargeFileWithoutError)
     auto pdu     = buildNoErrorPdu(Condition::NoError, UINT64_MAX, LargeFileFlag::LargeFile);
     auto encoded = pdu->encodeToBytes();
 
-    ASSERT_EQ(pdu->getConditionCode(), Condition::NoError);
-    ASSERT_EQ(pdu->getFileSize(), UINT64_MAX);
-    ASSERT_EQ(pdu->getChecksum(), 1111111111);
-    ASSERT_EQ(pdu->getLengthOfEntityID(), 0);
-    ASSERT_EQ(pdu->getFaultEntityID(), 0);
+    ASSERT_EQ(pdu->conditionCode, Condition::NoError);
+    ASSERT_EQ(pdu->fileSize, UINT64_MAX);
+    ASSERT_EQ(pdu->checksum, 1111111111);
+    ASSERT_EQ(pdu->lengthOfEntityID, 0);
+    ASSERT_EQ(pdu->faultEntityID, 0);
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_large_no_error_frame));
 }
@@ -274,9 +273,9 @@ TEST_F(EndOfFileTest, TestEncodingSmallFileWithError)
         buildErrorPdu(Condition::FileSizeError, UINT32_MAX, LargeFileFlag::SmallFile, 2, 12345);
     auto encoded = pdu->encodeToBytes();
 
-    ASSERT_EQ(pdu->getConditionCode(), Condition::FileSizeError);
-    ASSERT_EQ(pdu->getLengthOfEntityID(), 2);
-    ASSERT_EQ(pdu->getFaultEntityID(), 12345);
+    ASSERT_EQ(pdu->conditionCode, Condition::FileSizeError);
+    ASSERT_EQ(pdu->lengthOfEntityID, 2);
+    ASSERT_EQ(pdu->faultEntityID, 12345);
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_small_with_error_frame));
 }
@@ -287,9 +286,9 @@ TEST_F(EndOfFileTest, TestEncodingLargeFileWithError)
         buildErrorPdu(Condition::FileSizeError, UINT64_MAX, LargeFileFlag::LargeFile, 2, 12345);
     auto encoded = pdu->encodeToBytes();
 
-    ASSERT_EQ(pdu->getConditionCode(), Condition::FileSizeError);
-    ASSERT_EQ(pdu->getLengthOfEntityID(), 2);
-    ASSERT_EQ(pdu->getFaultEntityID(), 12345);
+    ASSERT_EQ(pdu->conditionCode, Condition::FileSizeError);
+    ASSERT_EQ(pdu->lengthOfEntityID, 2);
+    ASSERT_EQ(pdu->faultEntityID, 12345);
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_large_with_error_frame));
 }
@@ -301,11 +300,11 @@ TEST_F(EndOfFileTest, TestDecodingSmallFileWithNoError)
 
     auto pdu = EndOfFile(encoded, LargeFileFlag::SmallFile);
 
-    ASSERT_EQ(pdu.getConditionCode(), Condition::NoError);
-    ASSERT_EQ(pdu.getFileSize(), UINT32_MAX);
-    ASSERT_EQ(pdu.getChecksum(), 1111111111);
-    ASSERT_EQ(pdu.getLengthOfEntityID(), 0);
-    ASSERT_EQ(pdu.getFaultEntityID(), 0);
+    ASSERT_EQ(pdu.conditionCode, Condition::NoError);
+    ASSERT_EQ(pdu.fileSize, UINT32_MAX);
+    ASSERT_EQ(pdu.checksum, 1111111111);
+    ASSERT_EQ(pdu.lengthOfEntityID, 0);
+    ASSERT_EQ(pdu.faultEntityID, 0);
 }
 
 TEST_F(EndOfFileTest, TestDecodingLargeFileWithNoError)
@@ -315,11 +314,11 @@ TEST_F(EndOfFileTest, TestDecodingLargeFileWithNoError)
 
     auto pdu = EndOfFile(encoded, LargeFileFlag::LargeFile);
 
-    ASSERT_EQ(pdu.getConditionCode(), Condition::NoError);
-    ASSERT_EQ(pdu.getFileSize(), UINT64_MAX);
-    ASSERT_EQ(pdu.getChecksum(), 1111111111);
-    ASSERT_EQ(pdu.getLengthOfEntityID(), 0);
-    ASSERT_EQ(pdu.getFaultEntityID(), 0);
+    ASSERT_EQ(pdu.conditionCode, Condition::NoError);
+    ASSERT_EQ(pdu.fileSize, UINT64_MAX);
+    ASSERT_EQ(pdu.checksum, 1111111111);
+    ASSERT_EQ(pdu.lengthOfEntityID, 0);
+    ASSERT_EQ(pdu.faultEntityID, 0);
 }
 
 TEST_F(EndOfFileTest, TestDecodingSmallFileWithError)
@@ -329,9 +328,9 @@ TEST_F(EndOfFileTest, TestDecodingSmallFileWithError)
 
     auto pdu = EndOfFile(encoded, LargeFileFlag::SmallFile);
 
-    ASSERT_EQ(pdu.getConditionCode(), Condition::FileSizeError);
-    ASSERT_EQ(pdu.getLengthOfEntityID(), 2);
-    ASSERT_EQ(pdu.getFaultEntityID(), 12345);
+    ASSERT_EQ(pdu.conditionCode, Condition::FileSizeError);
+    ASSERT_EQ(pdu.lengthOfEntityID, 2);
+    ASSERT_EQ(pdu.faultEntityID, 12345);
 }
 
 TEST_F(EndOfFileTest, TestDecodingLargeFileWithError)
@@ -341,9 +340,9 @@ TEST_F(EndOfFileTest, TestDecodingLargeFileWithError)
 
     auto pdu = EndOfFile(encoded, LargeFileFlag::LargeFile);
 
-    ASSERT_EQ(pdu.getConditionCode(), Condition::FileSizeError);
-    ASSERT_EQ(pdu.getLengthOfEntityID(), 2);
-    ASSERT_EQ(pdu.getFaultEntityID(), 12345);
+    ASSERT_EQ(pdu.conditionCode, Condition::FileSizeError);
+    ASSERT_EQ(pdu.lengthOfEntityID, 2);
+    ASSERT_EQ(pdu.faultEntityID, 12345);
 }
 
 TEST_F(EndOfFileTest, TestDecodingWrongByteStreamSize)
