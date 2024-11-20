@@ -50,7 +50,7 @@ class EndOfFileTest : public testing::Test
 
 TEST_F(KeepAliveTest, TestEncodingSmallFile)
 {
-    auto pdu     = KeepAlive(UINT32_MAX);
+    auto pdu     = KeepAlive(UINT32_MAX, LargeFileFlag::SmallFile);
     auto encoded = pdu.encodeToBytes();
 
     ASSERT_EQ(pdu.getLargeFileFlag(), LargeFileFlag::SmallFile);
@@ -60,7 +60,7 @@ TEST_F(KeepAliveTest, TestEncodingSmallFile)
 
 TEST_F(KeepAliveTest, TestEncodingLargeFile)
 {
-    auto pdu     = KeepAlive(UINT64_MAX);
+    auto pdu     = KeepAlive(UINT64_MAX, LargeFileFlag::LargeFile);
     auto encoded = pdu.encodeToBytes();
 
     ASSERT_EQ(pdu.getLargeFileFlag(), LargeFileFlag::LargeFile);
@@ -68,6 +68,10 @@ TEST_F(KeepAliveTest, TestEncodingLargeFile)
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_large_frame));
 }
 
+TEST_F(KeepAliveTest, TestEncodingWrongFileSize)
+{
+    ASSERT_THROW(KeepAlive(UINT64_MAX, LargeFileFlag::SmallFile), PduConstructionException);
+}
 TEST_F(KeepAliveTest, TestDecodingSmallFile)
 {
     auto encoded = std::span<uint8_t const>{encoded_small_frame.begin(), encoded_small_frame.end()};

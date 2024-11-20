@@ -21,6 +21,16 @@ namespace header    = ::cfdp::pdu::header;
 namespace utils     = ::cfdp::utils;
 namespace exception = ::cfdp::pdu::exception;
 
+cfdp::pdu::directive::KeepAlive::KeepAlive(uint64_t progress, LargeFileFlag largeFileFlag)
+    : progress(progress), largeFileFlag(largeFileFlag)
+{
+    if (largeFileFlag == LargeFileFlag::SmallFile &&
+        utils::bytesNeeded(progress) > sizeof(uint32_t))
+    {
+        throw exception::PduConstructionException("Progress exceeds small file size");
+    }
+}
+
 cfdp::pdu::directive::KeepAlive::KeepAlive(std::span<uint8_t const> memory)
 {
     const auto memory_size = memory.size();

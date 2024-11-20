@@ -12,8 +12,7 @@ namespace cfdp::pdu::directive
 class KeepAlive : PduInterface
 {
   public:
-    KeepAlive(uint32_t progress) : progress(progress), largeFileFlag(LargeFileFlag::SmallFile){};
-    KeepAlive(uint64_t progress) : progress(progress), largeFileFlag(LargeFileFlag::LargeFile){};
+    KeepAlive(uint64_t progress, LargeFileFlag largeFileFlag);
     KeepAlive(std::span<uint8_t const> memory);
 
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
