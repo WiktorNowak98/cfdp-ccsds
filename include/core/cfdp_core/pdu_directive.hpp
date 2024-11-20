@@ -9,12 +9,11 @@ using ::cfdp::pdu::header::LargeFileFlag;
 namespace cfdp::pdu::directive
 {
 
-class KeepAlivePdu : PduInterface
+class KeepAlive : PduInterface
 {
   public:
-    KeepAlivePdu(uint32_t progress) : progress(progress), largeFileFlag(LargeFileFlag::SmallFile){};
-    KeepAlivePdu(uint64_t progress) : progress(progress), largeFileFlag(LargeFileFlag::LargeFile){};
-    KeepAlivePdu(std::span<uint8_t const> memory);
+    KeepAlive(uint64_t progress, LargeFileFlag largeFileFlag);
+    KeepAlive(std::span<uint8_t const> memory);
 
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
 
@@ -40,11 +39,11 @@ class KeepAlivePdu : PduInterface
     }
 };
 
-class AckPdu : PduInterface
+class Ack : PduInterface
 {
   public:
-    AckPdu(Directive directiveCode, Condition conditionCode, TransactionStatus transactionStatus);
-    AckPdu(std::span<uint8_t const> memory);
+    Ack(Directive directiveCode, Condition conditionCode, TransactionStatus transactionStatus);
+    Ack(std::span<uint8_t const> memory);
 
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
     [[nodiscard]] inline uint16_t getRawSize() const override { return const_pdu_size_bytes; };
@@ -60,6 +59,51 @@ class AckPdu : PduInterface
     TransactionStatus transactionStatus;
 
     static constexpr uint16_t const_pdu_size_bytes = sizeof(uint8_t) + sizeof(uint16_t);
+};
+
+class EndOfFile : PduInterface
+{
+  public:
+    EndOfFile(Condition conditionCode, uint32_t checksum, uint64_t fileSize,
+              LargeFileFlag largeFileFlag, uint8_t lengthOfEntityID, uint64_t faultEntityID);
+    EndOfFile(Condition conditionCode, uint32_t checksum, uint64_t fileSize,
+              LargeFileFlag largeFileFlag);
+    EndOfFile(std::span<uint8_t const> memory, LargeFileFlag largeFileFlag);
+
+    [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
+
+    [[nodiscard]] inline uint16_t getRawSize() const override
+    {
+        return const_pdu_size_bytes + getSizeOfFileSize() + getFaultLocationSize();
+    };
+
+    [[nodiscard]] auto getConditionCode() const { return conditionCode; }
+    [[nodiscard]] auto getFileSize() const { return fileSize; }
+    [[nodiscard]] auto getChecksum() const { return checksum; }
+    [[nodiscard]] auto getLengthOfEntityID() const { return lengthOfEntityID; }
+    [[nodiscard]] auto getFaultEntityID() const { return faultEntityID; }
+
+  private:
+    uint64_t fileSize;
+    LargeFileFlag largeFileFlag;
+    Condition conditionCode;
+    uint32_t checksum;
+    uint8_t lengthOfEntityID = 0;
+    uint64_t faultEntityID   = 0;
+
+    static constexpr uint8_t const_pdu_size_bytes =
+        sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint32_t);
+
+    [[nodiscard]] inline bool isError() const { return conditionCode != Condition::NoError; }
+    [[nodiscard]] inline uint8_t getSizeOfFileSize() const
+    {
+        return (largeFileFlag == LargeFileFlag::LargeFile) ? sizeof(uint64_t) : sizeof(uint32_t);
+    }
+
+    [[nodiscard]] inline uint8_t getFaultLocationSize() const
+    {
+        return (isError()) ? sizeof(uint8_t) + sizeof(uint8_t) + lengthOfEntityID : 0;
+    }
 };
 
 } // namespace cfdp::pdu::directive
