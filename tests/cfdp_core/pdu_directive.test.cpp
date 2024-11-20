@@ -1,3 +1,5 @@
+#include "gtest/gtest.h"
+#include <functional>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -7,6 +9,7 @@
 
 #include <cstdint>
 #include <span>
+#include <tuple>
 
 using ::cfdp::pdu::exception::DecodeFromBytesException;
 using ::cfdp::pdu::exception::PduConstructionException;
@@ -36,6 +39,21 @@ class AckTest : public testing::Test
 
 class EndOfFileTest : public testing::Test
 {
+  public:
+    std::unique_ptr<EndOfFile> buildNoErrorPdu(Condition conditionCode, uint64_t fileSize,
+                                               LargeFileFlag largeFileFlag)
+    {
+        return std::make_unique<EndOfFile>(conditionCode, 1111111111, fileSize, largeFileFlag);
+    }
+
+    std::unique_ptr<EndOfFile> buildErrorPdu(Condition conditionCode, uint64_t fileSize,
+                                             LargeFileFlag largeFileFlag, uint8_t lengthOfEntityID,
+                                             uint64_t faultEntityID)
+    {
+        return std::make_unique<EndOfFile>(conditionCode, 1111111111, fileSize, largeFileFlag,
+                                           lengthOfEntityID, faultEntityID);
+    }
+
   protected:
     static constexpr std::array<uint8_t, 10> encoded_small_no_error_frame = {
         4, 0, 66, 58, 53, 199, 255, 255, 255, 255};
@@ -47,6 +65,28 @@ class EndOfFileTest : public testing::Test
         4, 96, 66, 58, 53, 199, 255, 255, 255, 255, 255, 255, 255, 255, 6, 2, 48, 57};
     ;
 };
+
+class EndOfFileNoErrorConstructorException
+    : public EndOfFileTest,
+      public testing::WithParamInterface<std::tuple<Condition, uint64_t, LargeFileFlag>>
+{};
+
+class EndOfFileErrorConstructorException
+    : public EndOfFileTest,
+      public testing::WithParamInterface<
+          std::tuple<Condition, uint64_t, LargeFileFlag, uint8_t, uint64_t>>
+{};
+
+INSTANTIATE_TEST_SUITE_P(
+    EndOfFileTest, EndOfFileNoErrorConstructorException,
+    testing::Values(std::make_tuple(Condition::FileSizeError, 1, LargeFileFlag::SmallFile),
+                    std::make_tuple(Condition::NoError, UINT64_MAX, LargeFileFlag::SmallFile)));
+
+INSTANTIATE_TEST_SUITE_P(EndOfFileTest, EndOfFileErrorConstructorException,
+                         testing::Values(std::make_tuple(Condition::NoError, 1,
+                                                         LargeFileFlag::SmallFile, 1, 1),
+                                         std::make_tuple(Condition::FileSizeError, UINT64_MAX,
+                                                         LargeFileFlag::SmallFile, 1, 1)));
 
 TEST_F(KeepAliveTest, TestEncodingSmallFile)
 {
@@ -182,71 +222,74 @@ TEST_F(AckTest, TestDecodingWrongDirectiveCode)
     ASSERT_THROW(Ack{encoded}, cfdp::pdu::exception::DecodeFromBytesException);
 }
 
-TEST_F(EndOfFileTest, TestConstructorException)
+TEST_P(EndOfFileNoErrorConstructorException, TestConstructorException)
 {
-    ASSERT_THROW(EndOfFile(Condition::FileSizeError, 1, 1, LargeFileFlag::SmallFile),
-                 PduConstructionException);
+    auto params = GetParam();
+    ASSERT_THROW(
+        std::apply(std::bind_front(&EndOfFileNoErrorConstructorException::buildNoErrorPdu, this),
+                   params),
+        PduConstructionException);
+}
 
-    ASSERT_THROW(EndOfFile(Condition::NoError, 1, 1, LargeFileFlag::SmallFile, 1, 1),
-                 PduConstructionException);
-
-    ASSERT_THROW(EndOfFile(Condition::NoError, 1, UINT64_MAX, LargeFileFlag::SmallFile),
-                 PduConstructionException);
-
-    ASSERT_THROW(EndOfFile(Condition::FileSizeError, 1, UINT64_MAX, LargeFileFlag::SmallFile, 1, 1),
-                 PduConstructionException);
+TEST_P(EndOfFileErrorConstructorException, TestConstructorException)
+{
+    auto params = GetParam();
+    ASSERT_THROW(
+        std::apply(std::bind_front(&EndOfFileNoErrorConstructorException::buildErrorPdu, this),
+                   params),
+        PduConstructionException);
 }
 
 TEST_F(EndOfFileTest, TestEncodingSmallFileWithoutError)
 {
-    auto pdu     = EndOfFile(Condition::NoError, 1111111111, UINT32_MAX, LargeFileFlag::SmallFile);
-    auto encoded = pdu.encodeToBytes();
+    auto pdu     = buildNoErrorPdu(Condition::NoError, UINT32_MAX, LargeFileFlag::SmallFile);
+    auto encoded = pdu->encodeToBytes();
 
-    ASSERT_EQ(pdu.getConditionCode(), Condition::NoError);
-    ASSERT_EQ(pdu.getFileSize(), UINT32_MAX);
-    ASSERT_EQ(pdu.getChecksum(), 1111111111);
-    ASSERT_EQ(pdu.getLengthOfEntityID(), 0);
-    ASSERT_EQ(pdu.getFaultEntityID(), 0);
+    ASSERT_EQ(pdu->getConditionCode(), Condition::NoError);
+    ASSERT_EQ(pdu->getFileSize(), UINT32_MAX);
+    ASSERT_EQ(pdu->getChecksum(), 1111111111);
+    ASSERT_EQ(pdu->getLengthOfEntityID(), 0);
+    ASSERT_EQ(pdu->getFaultEntityID(), 0);
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_small_no_error_frame));
 }
 
 TEST_F(EndOfFileTest, TestEncodingLargeFileWithoutError)
 {
-    auto pdu     = EndOfFile(Condition::NoError, 1111111111, UINT64_MAX, LargeFileFlag::LargeFile);
-    auto encoded = pdu.encodeToBytes();
+    auto pdu     = buildNoErrorPdu(Condition::NoError, UINT64_MAX, LargeFileFlag::LargeFile);
+    auto encoded = pdu->encodeToBytes();
 
-    ASSERT_EQ(pdu.getConditionCode(), Condition::NoError);
-    ASSERT_EQ(pdu.getFileSize(), UINT64_MAX);
-    ASSERT_EQ(pdu.getChecksum(), 1111111111);
-    ASSERT_EQ(pdu.getLengthOfEntityID(), 0);
-    ASSERT_EQ(pdu.getFaultEntityID(), 0);
+    ASSERT_EQ(pdu->getConditionCode(), Condition::NoError);
+    ASSERT_EQ(pdu->getFileSize(), UINT64_MAX);
+    ASSERT_EQ(pdu->getChecksum(), 1111111111);
+    ASSERT_EQ(pdu->getLengthOfEntityID(), 0);
+    ASSERT_EQ(pdu->getFaultEntityID(), 0);
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_large_no_error_frame));
 }
 
 TEST_F(EndOfFileTest, TestEncodingSmallFileWithError)
 {
-    auto pdu = EndOfFile(Condition::FileSizeError, 1111111111, UINT32_MAX, LargeFileFlag::SmallFile,
-                         2, 12345);
-    auto encoded = pdu.encodeToBytes();
+    auto pdu =
+        buildErrorPdu(Condition::FileSizeError, UINT32_MAX, LargeFileFlag::SmallFile, 2, 12345);
+    auto encoded = pdu->encodeToBytes();
 
-    ASSERT_EQ(pdu.getConditionCode(), Condition::FileSizeError);
-    ASSERT_EQ(pdu.getLengthOfEntityID(), 2);
-    ASSERT_EQ(pdu.getFaultEntityID(), 12345);
+    ASSERT_EQ(pdu->getConditionCode(), Condition::FileSizeError);
+    ASSERT_EQ(pdu->getLengthOfEntityID(), 2);
+    ASSERT_EQ(pdu->getFaultEntityID(), 12345);
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_small_with_error_frame));
 }
 
 TEST_F(EndOfFileTest, TestEncodingLargeFileWithError)
 {
-    auto pdu = EndOfFile(Condition::FileSizeError, 1111111111, UINT64_MAX, LargeFileFlag::LargeFile,
-                         2, 12345);
-    auto encoded = pdu.encodeToBytes();
+    auto pdu =
+        buildErrorPdu(Condition::FileSizeError, UINT64_MAX, LargeFileFlag::LargeFile, 2, 12345);
+    auto encoded = pdu->encodeToBytes();
 
-    ASSERT_EQ(pdu.getConditionCode(), Condition::FileSizeError);
-    ASSERT_EQ(pdu.getLengthOfEntityID(), 2);
-    ASSERT_EQ(pdu.getFaultEntityID(), 12345);
+    ASSERT_EQ(pdu->getConditionCode(), Condition::FileSizeError);
+    ASSERT_EQ(pdu->getLengthOfEntityID(), 2);
+    ASSERT_EQ(pdu->getFaultEntityID(), 12345);
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_large_with_error_frame));
 }

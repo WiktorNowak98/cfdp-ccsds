@@ -167,7 +167,7 @@ cfdp::pdu::directive::EndOfFile::EndOfFile(std::span<uint8_t const> memory,
 {
     const auto memory_size = memory.size();
 
-    if (memory_size < const_pdu_size_bytes)
+    if (memory_size < const_pdu_size_bytes + getSizeOfFileSize())
     {
         throw exception::DecodeFromBytesException("Passed memory does not contain enough bytes");
     }
