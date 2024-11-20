@@ -184,14 +184,22 @@ TEST_F(AckTest, TestDecodingWrongDirectiveCode)
 
 TEST_F(EndOfFileTest, TestConstructorException)
 {
-    ASSERT_THROW(EndOfFile<uint32_t>(Condition::FileSizeError, 1, 1), PduConstructionException);
+    ASSERT_THROW(EndOfFile(Condition::FileSizeError, 1, 1, LargeFileFlag::SmallFile),
+                 PduConstructionException);
 
-    ASSERT_THROW(EndOfFile<uint32_t>(Condition::NoError, 1, 1, 1, 1), PduConstructionException);
+    ASSERT_THROW(EndOfFile(Condition::NoError, 1, 1, LargeFileFlag::SmallFile, 1, 1),
+                 PduConstructionException);
+
+    ASSERT_THROW(EndOfFile(Condition::NoError, 1, UINT64_MAX, LargeFileFlag::SmallFile),
+                 PduConstructionException);
+
+    ASSERT_THROW(EndOfFile(Condition::FileSizeError, 1, UINT64_MAX, LargeFileFlag::SmallFile, 1, 1),
+                 PduConstructionException);
 }
 
-TEST_F(EndOfFileTest, TestEncodingSmallFileWithNoError)
+TEST_F(EndOfFileTest, TestEncodingSmallFileWithoutError)
 {
-    auto pdu     = EndOfFile(Condition::NoError, 1111111111, UINT32_MAX);
+    auto pdu     = EndOfFile(Condition::NoError, 1111111111, UINT32_MAX, LargeFileFlag::SmallFile);
     auto encoded = pdu.encodeToBytes();
 
     ASSERT_EQ(pdu.getConditionCode(), Condition::NoError);
@@ -203,9 +211,9 @@ TEST_F(EndOfFileTest, TestEncodingSmallFileWithNoError)
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_small_no_error_frame));
 }
 
-TEST_F(EndOfFileTest, TestEncodingLargeFileWithNoError)
+TEST_F(EndOfFileTest, TestEncodingLargeFileWithoutError)
 {
-    auto pdu     = EndOfFile(Condition::NoError, 1111111111, UINT64_MAX);
+    auto pdu     = EndOfFile(Condition::NoError, 1111111111, UINT64_MAX, LargeFileFlag::LargeFile);
     auto encoded = pdu.encodeToBytes();
 
     ASSERT_EQ(pdu.getConditionCode(), Condition::NoError);
@@ -219,7 +227,8 @@ TEST_F(EndOfFileTest, TestEncodingLargeFileWithNoError)
 
 TEST_F(EndOfFileTest, TestEncodingSmallFileWithError)
 {
-    auto pdu     = EndOfFile(Condition::FileSizeError, 1111111111, UINT32_MAX, 2, 12345);
+    auto pdu = EndOfFile(Condition::FileSizeError, 1111111111, UINT32_MAX, LargeFileFlag::SmallFile,
+                         2, 12345);
     auto encoded = pdu.encodeToBytes();
 
     ASSERT_EQ(pdu.getConditionCode(), Condition::FileSizeError);
@@ -231,7 +240,8 @@ TEST_F(EndOfFileTest, TestEncodingSmallFileWithError)
 
 TEST_F(EndOfFileTest, TestEncodingLargeFileWithError)
 {
-    auto pdu     = EndOfFile(Condition::FileSizeError, 1111111111, UINT64_MAX, 2, 12345);
+    auto pdu = EndOfFile(Condition::FileSizeError, 1111111111, UINT64_MAX, LargeFileFlag::LargeFile,
+                         2, 12345);
     auto encoded = pdu.encodeToBytes();
 
     ASSERT_EQ(pdu.getConditionCode(), Condition::FileSizeError);
@@ -246,7 +256,7 @@ TEST_F(EndOfFileTest, TestDecodingSmallFileWithNoError)
     auto encoded = std::span<uint8_t const>{encoded_small_no_error_frame.begin(),
                                             encoded_small_no_error_frame.end()};
 
-    auto pdu = EndOfFile<uint32_t>(encoded);
+    auto pdu = EndOfFile(encoded, LargeFileFlag::SmallFile);
 
     ASSERT_EQ(pdu.getConditionCode(), Condition::NoError);
     ASSERT_EQ(pdu.getFileSize(), UINT32_MAX);
@@ -260,7 +270,7 @@ TEST_F(EndOfFileTest, TestDecodingLargeFileWithNoError)
     auto encoded = std::span<uint8_t const>{encoded_large_no_error_frame.begin(),
                                             encoded_large_no_error_frame.end()};
 
-    auto pdu = EndOfFile<uint64_t>(encoded);
+    auto pdu = EndOfFile(encoded, LargeFileFlag::LargeFile);
 
     ASSERT_EQ(pdu.getConditionCode(), Condition::NoError);
     ASSERT_EQ(pdu.getFileSize(), UINT64_MAX);
@@ -274,7 +284,7 @@ TEST_F(EndOfFileTest, TestDecodingSmallFileWithError)
     auto encoded = std::span<uint8_t const>{encoded_small_with_error_frame.begin(),
                                             encoded_small_with_error_frame.end()};
 
-    auto pdu = EndOfFile<uint32_t>(encoded);
+    auto pdu = EndOfFile(encoded, LargeFileFlag::SmallFile);
 
     ASSERT_EQ(pdu.getConditionCode(), Condition::FileSizeError);
     ASSERT_EQ(pdu.getLengthOfEntityID(), 2);
@@ -286,7 +296,7 @@ TEST_F(EndOfFileTest, TestDecodingLargeFileWithError)
     auto encoded = std::span<uint8_t const>{encoded_large_with_error_frame.begin(),
                                             encoded_large_with_error_frame.end()};
 
-    auto pdu = EndOfFile<uint64_t>(encoded);
+    auto pdu = EndOfFile(encoded, LargeFileFlag::LargeFile);
 
     ASSERT_EQ(pdu.getConditionCode(), Condition::FileSizeError);
     ASSERT_EQ(pdu.getLengthOfEntityID(), 2);
@@ -298,7 +308,7 @@ TEST_F(EndOfFileTest, TestDecodingWrongByteStreamSize)
     auto encoded = std::span<uint8_t const>{encoded_small_no_error_frame.begin(),
                                             encoded_small_no_error_frame.end() - 1};
 
-    ASSERT_THROW(EndOfFile<uint32_t>{encoded}, DecodeFromBytesException);
+    ASSERT_THROW(EndOfFile(encoded, LargeFileFlag::SmallFile), DecodeFromBytesException);
 }
 
 TEST_F(EndOfFileTest, TestDecodingWrongTLVType)
@@ -307,5 +317,5 @@ TEST_F(EndOfFileTest, TestDecodingWrongTLVType)
                                              255, 255, 255, 5,  2,  48,  57};
     auto encoded = std::span<uint8_t const>{encoded_frame.begin(), encoded_frame.end()};
 
-    ASSERT_THROW(EndOfFile<uint32_t>{encoded}, DecodeFromBytesException);
+    ASSERT_THROW(EndOfFile(encoded, LargeFileFlag::SmallFile), DecodeFromBytesException);
 }

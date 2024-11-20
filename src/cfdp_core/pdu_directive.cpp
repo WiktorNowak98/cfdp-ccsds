@@ -124,11 +124,17 @@ std::vector<uint8_t> cfdp::pdu::directive::Ack::encodeToBytes() const
     return encodedPdu;
 }
 
-template <class T>
-cfdp::pdu::directive::EndOfFile<T>::EndOfFile(Condition conditionCode, uint32_t checksum,
-                                              T fileSize)
-    : conditionCode(conditionCode), checksum(checksum), fileSize(fileSize)
+cfdp::pdu::directive::EndOfFile::EndOfFile(Condition conditionCode, uint32_t checksum,
+                                           uint64_t fileSize, LargeFileFlag largeFileFlag)
+    : conditionCode(conditionCode), checksum(checksum), fileSize(fileSize),
+      largeFileFlag(largeFileFlag)
 {
+    if (largeFileFlag == LargeFileFlag::SmallFile &&
+        utils::bytesNeeded(fileSize) > sizeof(uint32_t))
+    {
+        throw exception::PduConstructionException("FileSize exceeds small file size");
+    }
+
     if (isError())
     {
         throw exception::PduConstructionException(
@@ -136,13 +142,18 @@ cfdp::pdu::directive::EndOfFile<T>::EndOfFile(Condition conditionCode, uint32_t 
     }
 };
 
-template <class T>
-cfdp::pdu::directive::EndOfFile<T>::EndOfFile(Condition conditionCode, uint32_t checksum,
-                                              T fileSize, uint8_t lengthOfEntityID,
-                                              uint64_t faultEntityID)
+cfdp::pdu::directive::EndOfFile::EndOfFile(Condition conditionCode, uint32_t checksum,
+                                           uint64_t fileSize, LargeFileFlag largeFileFlag,
+                                           uint8_t lengthOfEntityID, uint64_t faultEntityID)
     : conditionCode(conditionCode), checksum(checksum), fileSize(fileSize),
-      lengthOfEntityID(lengthOfEntityID), faultEntityID(faultEntityID)
+      largeFileFlag(largeFileFlag), lengthOfEntityID(lengthOfEntityID), faultEntityID(faultEntityID)
 {
+    if (largeFileFlag == LargeFileFlag::SmallFile &&
+        utils::bytesNeeded(fileSize) > sizeof(uint32_t))
+    {
+        throw exception::PduConstructionException("FileSize exceeds small file size");
+    }
+
     if (not isError())
     {
         throw exception::PduConstructionException(
@@ -150,8 +161,9 @@ cfdp::pdu::directive::EndOfFile<T>::EndOfFile(Condition conditionCode, uint32_t 
     }
 };
 
-template <class T>
-cfdp::pdu::directive::EndOfFile<T>::EndOfFile(std::span<uint8_t const> memory)
+cfdp::pdu::directive::EndOfFile::EndOfFile(std::span<uint8_t const> memory,
+                                           LargeFileFlag largeFileFlag)
+    : largeFileFlag(largeFileFlag)
 {
     const auto memory_size = memory.size();
 
@@ -175,7 +187,7 @@ cfdp::pdu::directive::EndOfFile<T>::EndOfFile(std::span<uint8_t const> memory)
         return;
     }
 
-    if (memory_size < const_pdu_size_bytes + getFaultLocationSize())
+    if (memory_size < const_pdu_size_bytes + getSizeOfFileSize() + getFaultLocationSize())
     {
         throw exception::DecodeFromBytesException("Passed memory does not contain enough bytes");
     }
@@ -191,8 +203,7 @@ cfdp::pdu::directive::EndOfFile<T>::EndOfFile(std::span<uint8_t const> memory)
         utils::bytesToInt<uint64_t>(memory, fault_location_position + 2, lengthOfEntityID);
 };
 
-template <class T>
-std::vector<uint8_t> cfdp::pdu::directive::EndOfFile<T>::encodeToBytes() const
+std::vector<uint8_t> cfdp::pdu::directive::EndOfFile::encodeToBytes() const
 {
     const auto pdu_size = getRawSize();
     auto encodedPdu     = std::vector<uint8_t>{};
@@ -224,6 +235,3 @@ std::vector<uint8_t> cfdp::pdu::directive::EndOfFile<T>::encodeToBytes() const
 
     return encodedPdu;
 }
-
-template class cfdp::pdu::directive::EndOfFile<uint32_t>;
-template class cfdp::pdu::directive::EndOfFile<uint64_t>;
