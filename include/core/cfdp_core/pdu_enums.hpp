@@ -94,6 +94,17 @@ enum class DirectiveSubtype : uint8_t
     Finished = 0b1,
 };
 
+enum class Checksum : uint8_t
+{
+    Null    = 0b0,
+    Modular = 0b1,
+};
+
+} // namespace cfdp::pdu::directive
+
+namespace cfdp::pdu::tlv
+{
+
 enum class TLVType : uint8_t
 {
     FilestoreRequest     = 0b000,
@@ -103,5 +114,4 @@ enum class TLVType : uint8_t
     FlowLabel            = 0b101,
     EntityId             = 0b110,
 };
-
-} // namespace cfdp::pdu::directive
+} // namespace cfdp::pdu::tlv
