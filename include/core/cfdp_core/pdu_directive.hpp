@@ -6,7 +6,6 @@
 #include <memory>
 #include <optional>
 #include <span>
-#include <string>
 
 using ::cfdp::pdu::header::LargeFileFlag;
 
@@ -95,13 +94,5 @@ class EndOfFile : PduInterface
     {
         return entityId.has_value() ? entityId->get()->getRawSize() : 0;
     }
-};
-
-class Metadata : PduInterface
-{
-  public:
-    Metadata(bool requestClosure, Checksum checksumType, uint64_t fileSize,
-             LargeFileFlag largeFileFlag, std::string sourceFileName,
-             std::string DestinationFileName);
 };
 } // namespace cfdp::pdu::directive
