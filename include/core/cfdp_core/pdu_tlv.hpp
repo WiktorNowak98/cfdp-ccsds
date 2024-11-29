@@ -5,10 +5,7 @@
 
 namespace cfdp::pdu::tlv
 {
-class TLVInterface : PduInterface
-{};
-
-class EntityId : TLVInterface
+class EntityId : PduInterface
 {
   public:
     EntityId(uint8_t lengthOfEntityID, uint64_t faultEntityID)
