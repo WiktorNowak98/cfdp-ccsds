@@ -1,13 +1,22 @@
 #include <cfdp_core/utils.hpp>
 #include <cfdp_runtime/socket.hpp>
 
+#include <fcntl.h>
+
 #include <bit>
 #include <stdexcept>
+#include <sys/fcntl.h>
 
 namespace
 {
-constexpr int ip_addr_converted = 1;
-constexpr int socket_error      = -1;
+// IP converter related retcodes.
+constexpr int invalid_addr_in_addr_family = 0;
+
+// File descriptor related retcodes.
+constexpr int file_descriptor_error = -1;
+
+// Socket related retcodes.
+constexpr int socket_error = -1;
 } // namespace
 
 cfdp::runtime::sockets::Socket::Socket(SocketType sType, uint16_t port, const std::string& ipAddr)
@@ -23,9 +32,23 @@ cfdp::runtime::sockets::Socket::Socket(SocketType sType, uint16_t port, const st
 
     auto result = inet_pton(AF_INET, ipAddr.c_str(), &addr.sin_addr);
 
-    if (result != ip_addr_converted)
+    if (result == invalid_addr_in_addr_family)
     {
         throw std::runtime_error{"Could not parse passed IP address."};
+    }
+
+    auto currentFlags = fcntl(handle, F_GETFL);
+
+    if (currentFlags == file_descriptor_error)
+    {
+        throw std::runtime_error{"Could not fetch file descriptor flags."};
+    }
+
+    auto status = fcntl(handle, F_SETFL, currentFlags | O_NONBLOCK);
+
+    if (status == file_descriptor_error)
+    {
+        throw std::runtime_error{"Could not set the socket to non-blocking."};
     }
 }
 
