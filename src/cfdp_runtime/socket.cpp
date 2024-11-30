@@ -1,21 +1,20 @@
 #include <cfdp_core/utils.hpp>
-#include <cfdp_runtime/logger.hpp>
 #include <cfdp_runtime/socket.hpp>
 
+#include <bit>
 #include <stdexcept>
 
 namespace
 {
-constexpr int invalid_socket    = -1;
 constexpr int ip_addr_converted = 1;
+constexpr int socket_error      = -1;
 } // namespace
 
 cfdp::runtime::sockets::Socket::Socket(SocketType sType, uint16_t port, const std::string& ipAddr)
     : handle(socket(AF_INET, utils::toUnderlying(sType), 0))
 {
-    if (handle == invalid_socket)
+    if (handle == socket_error)
     {
-        logging::error("Could not create a valid socket.");
         throw std::runtime_error{"Could not create a socket."};
     }
 
@@ -26,7 +25,30 @@ cfdp::runtime::sockets::Socket::Socket(SocketType sType, uint16_t port, const st
 
     if (result != ip_addr_converted)
     {
-        logging::error("Could not parse ip address: {}.", result);
         throw std::runtime_error{"Could not parse passed IP address."};
+    }
+}
+
+void cfdp::runtime::sockets::UDPClient::sendMessage(std::vector<uint8_t> message)
+{
+    auto length = message.size();
+    auto addr   = std::bit_cast<sockaddr*>(&socket.addr);
+
+    auto result = sendto(socket.handle, message.data(), length, 0, addr, sizeof(socket.addr));
+
+    if (result == socket_error)
+    {
+        throw std::runtime_error{"Could not send data via socket."};
+    }
+}
+
+void cfdp::runtime::sockets::UDPServer::socketBind()
+{
+    auto addr   = std::bit_cast<sockaddr*>(&socket.addr);
+    auto result = bind(socket.handle, addr, sizeof(socket.addr));
+
+    if (result == socket_error)
+    {
+        throw std::runtime_error{"Could not bind the socket."};
     }
 }
