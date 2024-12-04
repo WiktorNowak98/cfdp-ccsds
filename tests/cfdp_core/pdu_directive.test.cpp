@@ -355,11 +355,11 @@ TEST_F(EndOfFileTest, TestDecodingWrongByteStreamSize)
     ASSERT_THROW(EndOfFile(encoded, LargeFileFlag::SmallFile), DecodeFromBytesException);
 }
 
-// TEST_F(EndOfFileTest, TestDecodingWrongTLVType)
-// {
-//     std::array<uint8_t, 14> encoded_frame = {4,   96,  66,  58, 53, 199, 255,
-//                                              255, 255, 255, 5,  2,  48,  57};
-//     auto encoded = std::span<uint8_t const>{encoded_frame.begin(), encoded_frame.end()};
+TEST_F(EndOfFileTest, TestDecodingWrongTLVType)
+{
+    std::array<uint8_t, 14> encoded_frame = {4,   96,  66,  58, 53, 199, 255,
+                                             255, 255, 255, 5,  2,  48,  57};
+    auto encoded = std::span<uint8_t const>{encoded_frame.begin(), encoded_frame.end()};
 
-//     ASSERT_THROW(EndOfFile(encoded, LargeFileFlag::SmallFile), DecodeFromBytesException);
-// }
+    ASSERT_THROW(EndOfFile(encoded, LargeFileFlag::SmallFile), DecodeFromBytesException);
+}
