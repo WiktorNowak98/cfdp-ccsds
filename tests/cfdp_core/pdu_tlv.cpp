@@ -8,11 +8,10 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <span>
-#include <string>
-#include <utility>
 #include <vector>
 
 using ::cfdp::pdu::exception::DecodeFromBytesException;
+using ::cfdp::pdu::exception::PduConstructionException;
 
 using ::cfdp::pdu::tlv::EntityId;
 using ::cfdp::pdu::tlv::FilestoreRequest;
@@ -77,6 +76,16 @@ TEST_F(FilestoreRequestTest, TestEncodingTwoFile)
     ASSERT_EQ(tlv->secondFileName.value(), "second");
 
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_create_two_file_frame));
+}
+
+TEST_F(FilestoreRequestTest, TestEncodingOneFileWrongCode)
+{
+    ASSERT_THROW(buildOneFileTlv(FilestoreRequestActionCode::RenameFile), PduConstructionException);
+}
+
+TEST_F(FilestoreRequestTest, TestEncodingTwoFileWrongCode)
+{
+    ASSERT_THROW(buildTwoFileTlv(FilestoreRequestActionCode::CreateFile), PduConstructionException);
 }
 
 TEST_F(FilestoreRequestTest, TestDecodingOneFile)
