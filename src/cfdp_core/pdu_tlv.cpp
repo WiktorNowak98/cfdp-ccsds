@@ -101,6 +101,48 @@ std::vector<uint8_t> cfdp::pdu::tlv::FilestoreRequest::encodeToBytes() const
     return encodedTlv;
 }
 
+cfdp::pdu::tlv::MessageToUser::MessageToUser(std::span<uint8_t const> memory)
+{
+    const auto memory_size = memory.size();
+
+    if (memory_size < sizeof(uint8_t) + sizeof(uint8_t))
+    {
+        throw exception::DecodeFromBytesException("Passed memory does not contain enough bytes");
+    }
+
+    if (memory[0] != utils::toUnderlying(TLVType::MessageToUser))
+    {
+        throw exception::DecodeFromBytesException("TLVType is not Filestore Request");
+    }
+
+    if (memory_size < sizeof(uint8_t) + sizeof(uint8_t) + memory[1])
+    {
+        throw exception::DecodeFromBytesException("Passed memory does not contain enough bytes");
+    }
+
+    auto messageBytes = utils::readLvValue(memory, 2);
+
+    message = utils::bytesToString(messageBytes, 0, messageBytes.size());
+};
+
+std::vector<uint8_t> cfdp::pdu::tlv::MessageToUser::encodeToBytes() const
+{
+    const auto pdu_size = getRawSize();
+    auto encodedTlv     = std::vector<uint8_t>{};
+
+    encodedTlv.reserve(pdu_size);
+
+    encodedTlv.push_back(utils::toUnderlying(TLVType::MessageToUser));
+    encodedTlv.push_back(sizeof(uint8_t) + message.length());
+    encodedTlv.push_back(message.length());
+
+    std::vector<uint8_t> messageBytes(message.begin(), message.end());
+
+    utils::concatenateVectorsInplace(messageBytes, encodedTlv);
+
+    return encodedTlv;
+}
+
 cfdp::pdu::tlv::EntityId::EntityId(std::span<uint8_t const> memory)
 {
 
