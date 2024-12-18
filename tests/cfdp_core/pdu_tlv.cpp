@@ -136,6 +136,32 @@ TEST_F(MessageToUserTest, TestEncoding)
     EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_frame));
 }
 
+TEST_F(MessageToUserTest, TestDecoding)
+{
+    auto encoded = std::span<uint8_t const>{encoded_frame.begin(), encoded_frame.end()};
+    auto tlv     = MessageToUser(encoded);
+
+    ASSERT_EQ(tlv.message, "hello");
+}
+
+TEST_F(MessageToUserTest, TestDecodingEmptyMemory)
+{
+    ASSERT_THROW(MessageToUser(std::span<uint8_t, 0>{}), DecodeFromBytesException);
+}
+
+TEST_F(MessageToUserTest, TestDecodingTooSmallEntityLength)
+{
+    auto encoded = std::span<uint8_t const>{encoded_frame.begin(), encoded_frame.end() - 1};
+    ASSERT_THROW(MessageToUser{encoded}, DecodeFromBytesException);
+}
+
+TEST_F(MessageToUserTest, TestDecodingWrongType)
+{
+    std::array<uint8_t, 8> frame = {0, 6, 0, 0, 0, 0, 4, 87};
+    auto encoded                 = std::span<uint8_t const>{frame.begin(), frame.end()};
+    ASSERT_THROW(MessageToUser{encoded}, DecodeFromBytesException);
+}
+
 TEST_F(EntityIdTest, TestEncoding)
 {
     auto tlv     = EntityId(6, 1111);
