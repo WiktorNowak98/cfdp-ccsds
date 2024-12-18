@@ -41,7 +41,7 @@ class FilestoreRequestTest : public testing::Test
 class MessageToUserTest : public testing::Test
 {
   protected:
-    static constexpr std::array<uint8_t, 8> encoded_frame = {2, 6, 5, 104, 101, 108, 108, 111};
+    static constexpr std::array<uint8_t, 7> encoded_frame = {2, 5, 104, 101, 108, 108, 111};
 };
 
 class EntityIdTest : public testing::Test

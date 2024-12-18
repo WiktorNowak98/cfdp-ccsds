@@ -22,6 +22,7 @@ class FilestoreRequest : PduInterface
 
     [[nodiscard]] inline uint16_t getRawSize() const override
     {
+        // TLV type + TLV length + actionCode + LV firstFileName + LV secondFileName {Optional}
         return sizeof(uint8_t) + sizeof(uint8_t) + valueSize();
     };
 
@@ -63,7 +64,8 @@ class MessageToUser : PduInterface
 
     [[nodiscard]] inline uint16_t getRawSize() const override
     {
-        return sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint8_t) + message.length();
+        // TLV type + TLV length + message
+        return sizeof(uint8_t) + sizeof(uint8_t) + message.length();
     };
 
     std::string message;
@@ -80,6 +82,7 @@ class EntityId : PduInterface
 
     [[nodiscard]] inline uint16_t getRawSize() const override
     {
+        // TLV type + TLV length + entityId
         return sizeof(uint8_t) + sizeof(uint8_t) + lengthOfEntityID;
     };
 
