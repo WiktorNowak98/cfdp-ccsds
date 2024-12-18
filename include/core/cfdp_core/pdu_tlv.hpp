@@ -6,7 +6,6 @@
 #include <optional>
 #include <span>
 #include <string>
-#include <utility>
 
 namespace cfdp::pdu::tlv
 {
