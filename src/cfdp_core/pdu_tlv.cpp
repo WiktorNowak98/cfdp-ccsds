@@ -169,7 +169,7 @@ cfdp::pdu::tlv::FaultHandlerOverride::FaultHandlerOverride(std::span<uint8_t con
 
     if (memory[0] != utils::toUnderlying(TLVType::FaultHandlerOverride))
     {
-        throw exception::DecodeFromBytesException("TLVType is not Enitity Id");
+        throw exception::DecodeFromBytesException("TLVType is not Fault Handler Override");
     }
 
     conditionCode =
