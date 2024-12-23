@@ -12,9 +12,9 @@ namespace cfdp::pdu::tlv
 class FilestoreRequest : PduInterface
 {
   public:
-    FilestoreRequest(FilestoreRequestActionCode actionCode, std::string firstFileName);
-    FilestoreRequest(FilestoreRequestActionCode actionCode, std::string firstFileName,
-                     std::string secondFileName);
+    FilestoreRequest(FilestoreRequestActionCode actionCode, std::string&& firstFileName);
+    FilestoreRequest(FilestoreRequestActionCode actionCode, std::string&& firstFileName,
+                     std::string&& secondFileName);
     FilestoreRequest(std::span<uint8_t const> memory);
 
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
@@ -56,7 +56,7 @@ class FilestoreRequest : PduInterface
 class MessageToUser : PduInterface
 {
   public:
-    MessageToUser(std::string message) : message(std::move(message)) {}
+    MessageToUser(std::string&& message) : message(std::move(message)) {}
     MessageToUser(std::span<uint8_t const> memory);
 
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;

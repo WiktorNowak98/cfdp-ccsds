@@ -17,7 +17,7 @@ namespace utils     = ::cfdp::utils;
 namespace exception = ::cfdp::pdu::exception;
 
 cfdp::pdu::tlv::FilestoreRequest::FilestoreRequest(FilestoreRequestActionCode actionCode,
-                                                   std::string firstFileName)
+                                                   std::string&& firstFileName)
     : actionCode(actionCode), firstFileName(std::move(firstFileName))
 {
     if (shouldHaveSecondFile())
@@ -26,8 +26,8 @@ cfdp::pdu::tlv::FilestoreRequest::FilestoreRequest(FilestoreRequestActionCode ac
     }
 };
 cfdp::pdu::tlv::FilestoreRequest::FilestoreRequest(FilestoreRequestActionCode actionCode,
-                                                   std::string firstFileName,
-                                                   std::string secondFileName)
+                                                   std::string&& firstFileName,
+                                                   std::string&& secondFileName)
     : actionCode(actionCode), firstFileName(std::move(firstFileName)),
       secondFileName(std::move(secondFileName))
 {
