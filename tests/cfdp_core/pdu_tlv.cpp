@@ -10,12 +10,16 @@
 #include <span>
 #include <vector>
 
+using ::cfdp::pdu::directive::Condition;
+
 using ::cfdp::pdu::exception::DecodeFromBytesException;
 using ::cfdp::pdu::exception::PduConstructionException;
 
 using ::cfdp::pdu::tlv::EntityId;
+using ::cfdp::pdu::tlv::FaultHandlerOverride;
 using ::cfdp::pdu::tlv::FilestoreRequest;
 using ::cfdp::pdu::tlv::FilestoreRequestActionCode;
+using ::cfdp::pdu::tlv::HandlerCode;
 using ::cfdp::pdu::tlv::MessageToUser;
 
 class FilestoreRequestTest : public testing::Test
@@ -43,6 +47,12 @@ class MessageToUserTest : public testing::Test
     static constexpr std::array<uint8_t, 7> encoded_frame = {2, 5, 104, 101, 108, 108, 111};
 };
 
+class FaultHandlerOverrideTest : public testing::Test
+{
+  protected:
+    static constexpr std::array<uint8_t, 3> encoded_frame = {4, 1, 19};
+};
+
 class EntityIdTest : public testing::Test
 {
   protected:
@@ -59,6 +69,14 @@ INSTANTIATE_TEST_SUITE_P(FilestoreRequestTest, FilestoreRequestDecodingException
                                          std::vector<uint8_t>{0, 6, 0, 6, 2, 3, 4, 5},
                                          std::vector<uint8_t>{0, 9, 32, 4, 2, 3, 4, 5, 4, 2, 3},
                                          std::vector<uint8_t>{6, 3, 0, 1, 102}));
+
+class FaultHandlerOverrideConstructionException : public FaultHandlerOverrideTest,
+                                                  public testing::WithParamInterface<Condition>
+{};
+
+INSTANTIATE_TEST_SUITE_P(FaultHandlerOverrideTest, FaultHandlerOverrideConstructionException,
+                         testing::Values(Condition::NoError, Condition::SuspendRequestReceived,
+                                         Condition::CancelRequestReceived));
 
 TEST_F(FilestoreRequestTest, TestEncodingOneFile)
 {
@@ -159,6 +177,45 @@ TEST_F(MessageToUserTest, TestDecodingWrongType)
     std::array<uint8_t, 8> frame = {0, 6, 0, 0, 0, 0, 4, 87};
     auto encoded                 = std::span<uint8_t const>{frame.begin(), frame.end()};
     ASSERT_THROW(MessageToUser{encoded}, DecodeFromBytesException);
+}
+
+TEST_F(FaultHandlerOverrideTest, TestEncoding)
+{
+    auto tlv = FaultHandlerOverride(Condition::PositiveAckLimitReached, HandlerCode::IgnoreError);
+    auto encoded = tlv.encodeToBytes();
+
+    ASSERT_EQ(tlv.conditionCode, Condition::PositiveAckLimitReached);
+    ASSERT_EQ(tlv.handlerCode, HandlerCode::IgnoreError);
+    EXPECT_THAT(encoded, testing::ElementsAreArray(encoded_frame));
+}
+
+TEST_P(FaultHandlerOverrideConstructionException, TestConstructionException)
+{
+    auto condition = GetParam();
+
+    ASSERT_THROW(FaultHandlerOverride(condition, HandlerCode::IgnoreError),
+                 PduConstructionException);
+}
+
+TEST_F(FaultHandlerOverrideTest, TestDecoding)
+{
+    auto encoded = std::span<uint8_t const>{encoded_frame.begin(), encoded_frame.end()};
+    auto tlv     = FaultHandlerOverride(encoded);
+
+    ASSERT_EQ(tlv.conditionCode, Condition::PositiveAckLimitReached);
+    ASSERT_EQ(tlv.handlerCode, HandlerCode::IgnoreError);
+}
+
+TEST_F(FaultHandlerOverrideTest, TestDecodingEmptyMemory)
+{
+    ASSERT_THROW(FaultHandlerOverride(std::span<uint8_t, 0>{}), DecodeFromBytesException);
+}
+
+TEST_F(FaultHandlerOverrideTest, TestDecodingWrongType)
+{
+    std::array<uint8_t, 3> frame = {0, 1, 19};
+    auto encoded                 = std::span<uint8_t const>{frame.begin(), frame.end()};
+    ASSERT_THROW(FaultHandlerOverride{encoded}, DecodeFromBytesException);
 }
 
 TEST_F(EntityIdTest, TestEncoding)

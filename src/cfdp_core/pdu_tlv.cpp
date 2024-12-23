@@ -11,8 +11,12 @@
 namespace
 {
 constexpr uint8_t filestore_request_action_code_bitmask = 0b1111'0000;
+
+constexpr uint8_t fault_handler_override_condition_code_bitmask = 0b1111'0000;
+constexpr uint8_t fault_handler_override_handler_code_bitmask   = 0b0000'1111;
 } // namespace
 
+namespace directive = ::cfdp::pdu::directive;
 namespace utils     = ::cfdp::utils;
 namespace exception = ::cfdp::pdu::exception;
 
@@ -138,6 +142,56 @@ std::vector<uint8_t> cfdp::pdu::tlv::MessageToUser::encodeToBytes() const
     std::vector<uint8_t> messageBytes(message.begin(), message.end());
 
     utils::concatenateVectorsInplace(messageBytes, encodedTlv);
+
+    return encodedTlv;
+}
+
+cfdp::pdu::tlv::FaultHandlerOverride::FaultHandlerOverride(directive::Condition conditionCode,
+                                                           HandlerCode handlerCode)
+    : conditionCode(conditionCode), handlerCode(handlerCode)
+{
+    if (conditionCode == directive::Condition::NoError ||
+        conditionCode == directive::Condition::SuspendRequestReceived ||
+        conditionCode == directive::Condition::CancelRequestReceived)
+    {
+        throw exception::PduConstructionException("This condition code is not applicable");
+    }
+};
+
+cfdp::pdu::tlv::FaultHandlerOverride::FaultHandlerOverride(std::span<uint8_t const> memory)
+{
+    const auto memory_size = memory.size();
+
+    if (memory_size < sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint8_t))
+    {
+        throw exception::DecodeFromBytesException("Passed memory does not contain enough bytes");
+    }
+
+    if (memory[0] != utils::toUnderlying(TLVType::FaultHandlerOverride))
+    {
+        throw exception::DecodeFromBytesException("TLVType is not Fault Handler Override");
+    }
+
+    conditionCode =
+        directive::Condition((memory[2] & fault_handler_override_condition_code_bitmask) >> 4);
+
+    handlerCode = HandlerCode(memory[2] & fault_handler_override_handler_code_bitmask);
+}
+
+std::vector<uint8_t> cfdp::pdu::tlv::FaultHandlerOverride::encodeToBytes() const
+{
+
+    const auto pdu_size = getRawSize();
+    auto encodedTlv     = std::vector<uint8_t>{};
+
+    encodedTlv.reserve(pdu_size);
+
+    encodedTlv.push_back(utils::toUnderlying(TLVType::FaultHandlerOverride));
+    encodedTlv.push_back(sizeof(uint8_t));
+
+    const uint8_t value =
+        utils::toUnderlying(conditionCode) << 4 | utils::toUnderlying(handlerCode);
+    encodedTlv.push_back(value);
 
     return encodedTlv;
 }
