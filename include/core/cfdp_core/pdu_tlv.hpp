@@ -12,15 +12,16 @@ namespace cfdp::pdu::tlv
 class FilestoreRequest : PduInterface
 {
   public:
-    FilestoreRequest(FilestoreRequestActionCode actionCode, std::string firstFileName);
-    FilestoreRequest(FilestoreRequestActionCode actionCode, std::string firstFileName,
-                     std::string secondFileName);
+    FilestoreRequest(FilestoreRequestActionCode actionCode, std::string&& firstFileName);
+    FilestoreRequest(FilestoreRequestActionCode actionCode, std::string&& firstFileName,
+                     std::string&& secondFileName);
     FilestoreRequest(std::span<uint8_t const> memory);
 
     [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
 
     [[nodiscard]] inline uint16_t getRawSize() const override
     {
+        // TLV type + TLV length + actionCode + LV firstFileName + LV secondFileName {Optional}
         return sizeof(uint8_t) + sizeof(uint8_t) + valueSize();
     };
 
@@ -51,6 +52,24 @@ class FilestoreRequest : PduInterface
         return shouldHaveSecondFile() ? sizeof(uint8_t) + secondFileName->length() : 0;
     }
 };
+
+class MessageToUser : PduInterface
+{
+  public:
+    MessageToUser(std::string&& message) : message(std::move(message)) {}
+    MessageToUser(std::span<uint8_t const> memory);
+
+    [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
+
+    [[nodiscard]] inline uint16_t getRawSize() const override
+    {
+        // TLV type + TLV length + message
+        return sizeof(uint8_t) + sizeof(uint8_t) + message.length();
+    };
+
+    std::string message;
+};
+
 class EntityId : PduInterface
 {
   public:
@@ -62,6 +81,7 @@ class EntityId : PduInterface
 
     [[nodiscard]] inline uint16_t getRawSize() const override
     {
+        // TLV type + TLV length + entityId
         return sizeof(uint8_t) + sizeof(uint8_t) + lengthOfEntityID;
     };
 
