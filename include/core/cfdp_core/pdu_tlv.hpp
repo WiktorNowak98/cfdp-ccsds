@@ -70,6 +70,25 @@ class MessageToUser : PduInterface
     std::string message;
 };
 
+class FaultHandlerOverride : PduInterface
+{
+  public:
+    FaultHandlerOverride(directive::Condition conditionCode, HandlerCode handlerCode);
+    FaultHandlerOverride(std::span<uint8_t const> memory);
+
+    [[nodiscard]] std::vector<uint8_t> encodeToBytes() const override;
+
+    [[nodiscard]] inline uint16_t getRawSize() const override
+    {
+
+        // TLV type + TLV length + (Condition + Handler)
+        return sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint8_t);
+    };
+
+    directive::Condition conditionCode;
+    HandlerCode handlerCode;
+};
+
 class EntityId : PduInterface
 {
   public:

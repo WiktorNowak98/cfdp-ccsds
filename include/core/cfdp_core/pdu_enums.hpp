@@ -120,4 +120,12 @@ enum class FilestoreRequestActionCode : uint8_t
     DenyFile        = 0b0111,
     DenyDirectory   = 0b1000,
 };
+
+enum class HandlerCode : uint8_t
+{
+    IssueNoticeOfCancellation = 0b0001,
+    IssueNoticeOfSuspension   = 0b0010,
+    IgnoreError               = 0b0011,
+    AbandonTransaction        = 0b0100,
+};
 } // namespace cfdp::pdu::tlv
